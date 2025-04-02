@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no,maximum-scale=1">
+    <title>Examples • Constraints • Rapier</title>
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.5.0/dist/aframe-environment-component.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-blink-controls@0.4.3/dist/aframe-blink-controls.min.js"></script>
+    <script type="module" src="../aframe-rapier.js"></script>
+    <script src="../components/force-pushable.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="text-overlay">
+      <p>Demonstration of many constraints including cone
+        twist, hinge, lock, point to point, and slider constraints.</p>
+      <p>Click when the red reticle is over a red object to apply a force to it.</p>
+    </div>
+    <a class="code-link"
+       target="_blank"
+       href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/constraints.html">
+      view code
+    </a>
+    <a-scene environment rapier-physics="debug: true">
+      <a-entity id="cameraRig">
+        <a-entity camera look-controls wasd-controls position="0 1.6 0">
+          <a-entity cursor
+            raycaster="objects:[force-pushable]"
+            position="0 0 -0.5"
+            geometry="primitive: circle; radius: 0.01; segments: 4;"
+            material="color: #FF4444; shader: flat">
+          </a-entity>
+        </a-entity>
+        <a-entity blink-controls="cameraRig: #cameraRig; button: trigger"
+                  rapier-body="type: KinematicPositionBased;"
+		  rapier-shape="shape: Cuboid; halfExtents: 0.05 0.1 0.1; fit: false;"
+                  hand-controls="hand: left">
+        </a-entity>
+        <a-entity blink-controls="cameraRig: #cameraRig; button: trigger"
+                  rapier-body="type: KinematicPositionBased;"
+		  rapier-shape="shape: Cuboid; halfExtents: 0.05 0.1 0.1; fit: false;"
+                  hand-controls="hand: right">
+        </a-entity>
+      </a-entity>
+
+      <!-- CONE TWIST -->
+      <a-entity position="2 0 -1">
+        <a-text value="Cone Twist" position="0 1.5 0" align="center"></a-text>
+        <a-sphere id="conetwist-target" radius="0.125" color="#777" position="0 1 0"
+                  rapier-body="type: Fixed" rapier-shape>
+        </a-sphere>
+        <a-box width="0.25" height="0.25" depth="0.25" color="#F00"
+               rapier-body
+	       rapier-shape
+               force-pushable
+               rapier-constraint="type: spherical;
+                                target: #conetwist-target;
+                                anchor1: 0.13 0 0.0;
+                                anchor2: -0.13 0.0 0.0;">
+        </a-box>
+      </a-entity>
+
+      <!-- HINGE -->
+      <a-entity position="-2 0 -1">
+        <a-text value="Hinge" position="0 1.5 0" align="center"></a-text>
+        <a-box
+	  id="hinge-target"
+	  position="-0.25 1 0.0"
+	  color="#777"
+	  rapier-body="type: Fixed"
+	  rapier-shape
+	  scale="0.25 0.25 0.25">
+	</a-box>
+        <a-box depth="0.1"
+               color="#F00"
+	       position="0 0 0"
+               scale="0.25 0.25 0.25"
+               rapier-body
+	       rapier-shape
+               force-pushable
+               rapier-constraint="type: revolute;
+                           target: #hinge-target;
+                           axis: 0 1 0;
+                           anchor1: -0.125 0 0;
+                           anchor2: 0.125 0 0.125;">
+        </a-box>
+        <a-box
+	  position="0.26 1 0"
+	  scale="0.25 0.25 0.25"
+	  color="#777"
+	  rapier-body="type: Fixed"
+	  rapier-shape
+	  >
+	</a-box>
+      </a-entity>
+
+      <!-- LOCK -->
+      <a-entity position="0 0 -1">
+        <a-text value="Lock" position="0 1.5 0" align="center"></a-text>
+        <a-box id="lock-target"
+               position="0 1.0 0"
+               scale="0.25 0.25 0.25"
+               color="#777"
+	       rapier-body="type: Fixed"
+	       rapier-shape>
+        </a-box>
+        <a-box color="#F00"
+               position="0 2.25 0"
+               scale="0.25 0.25 0.25"
+               rapier-body
+	       rapier-shape
+               force-pushable
+               rapier-constraint="type: fixed; target: #lock-target">
+        </a-box>
+      </a-entity>
+
+      <!-- POINT TO POINT -->
+      <a-entity position="4 0 -1">
+        <a-text value="Point to Point" position="0 1.5 0" align="center"></a-text>
+        <a-box id="pointtopoint-target"
+               color="#777"
+               position="0 1 0"
+               scale="0.25 0.25 0.25"
+	       rapier-body="type: Fixed"
+	       rapier-shape
+	       >
+        </a-box>
+        <a-box color="#F00"
+               scale="0.25 0.25 0.25"
+	       rapier-body
+	       rapier-shape
+               force-pushable
+               rapier-constraint="type: spherical;
+                                target: #pointtopoint-target;
+                                anchor1: -0.125 -0.125 0.125;
+                                anchor2: 0.125 -0.125 0.125">
+        </a-box>
+      </a-entity>
+
+      <!-- SLIDER -->
+      <a-entity position="-4 0 -1">
+        <a-text value="Slider" position="0 1.5 0" align="center"></a-text>
+        <a-sphere id="slider-target"
+		  radius="0.125"
+		  position="-0.5 1 0"
+		  color="#777"
+		  rapier-body="type: Fixed"
+		  rapier-shape
+		  >
+        </a-sphere>
+        <a-sphere color="#F00"
+               radius="0.125"
+               position="0 1 0"
+	       rapier-body
+	       rapier-shape
+               force-pushable
+               rapier-constraint="type: prismatic; axis: 1 0 0; limitsEnabled: true; limitMin: -1.5; limitMax: -0.25; target: #slider-target">
+        </a-sphere>
+        <a-cylinder radius="0.05" height="2" position="0 1 0" rotation="0 0 90"></a-cylinder>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>
