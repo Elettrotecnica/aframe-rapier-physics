@@ -138,11 +138,11 @@ async function RapierPhysics(options) {
           const geometry = meshes[0].geometry;
           const parameters = geometry.parameters;
 
-          options.halfExtents.x = parameters.width !== undefined ?
+          options.halfExtents.x = parameters?.width !== undefined ?
             parameters.width / 2 : 0.5;
-          options.halfExtents.y = parameters.height !== undefined ?
+          options.halfExtents.y = parameters?.height !== undefined ?
             parameters.height / 2 : 0.5;
-          options.halfExtents.z = parameters.depth !== undefined ?
+          options.halfExtents.z = parameters?.depth !== undefined ?
             parameters.depth / 2 : 0.5;
 
           options.fit = false;
