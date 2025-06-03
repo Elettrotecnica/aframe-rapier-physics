@@ -433,6 +433,8 @@ async function RapierPhysics(options) {
       quaternion.copy(object.quaternion);
       object.quaternion.identity();
 
+      let indexOffset = 0;
+
       object.traverse(mesh => {
         if (
           mesh.isMesh &&
@@ -449,11 +451,13 @@ async function RapierPhysics(options) {
             vertices.push( vertex.x, vertex.y, vertex.z );
           }
 
-          const index = geometry.getIndex() === null
-                ? null
-                : geometry.getIndex().array;
-
-          indexes.push(...index);
+          if (geometry.index) {
+            const index = geometry.index;
+            for ( let j = 0; j < index.count; ++ j ) {
+              indexes.push( index.getX( j ) + indexOffset );
+            }
+            indexOffset += geometry.attributes.position.count;
+          }
         }
       });
 
