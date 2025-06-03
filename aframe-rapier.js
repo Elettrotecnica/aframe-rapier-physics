@@ -34,6 +34,23 @@ const getWorldQuaternion = (function () {
   };
 })();
 
+/*
+  This is useful when computing primitive collision shapes for models
+  that do not have the origin at the center.
+ */
+const computeOffset = (function () {
+  const b = new THREE.Box3();
+  const v = new THREE.Vector3();
+  return function (object) {
+    object.updateMatrixWorld();
+    b.setFromObject(object);
+    b.getCenter(v);
+    object.worldToLocal(v);
+    v.divide(object.scale);
+    return v;
+  };
+})();
+
 class RapierDebugRenderer {
   mesh
   world
@@ -244,6 +261,8 @@ async function RapierPhysics(options) {
 
   function createCuboidShape(object, options) {
     if (options.fit) {
+      options.offset = computeOffset(object);
+
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
@@ -266,6 +285,8 @@ async function RapierPhysics(options) {
 
   function createCylinderShape(object, options) {
     if (options.fit) {
+      options.offset = computeOffset(object);
+
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
@@ -296,6 +317,8 @@ async function RapierPhysics(options) {
 
   function createCapsuleShape(object, options) {
     if (options.fit) {
+      options.offset = computeOffset(object);
+
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
@@ -326,6 +349,8 @@ async function RapierPhysics(options) {
 
   function createConeShape(object, options) {
     if (options.fit) {
+      options.offset = computeOffset(object);
+
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
@@ -356,6 +381,8 @@ async function RapierPhysics(options) {
 
   function createBallShape(object, options) {
     if (options.fit) {
+      options.offset = computeOffset(object);
+
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
