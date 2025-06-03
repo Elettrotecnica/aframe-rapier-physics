@@ -939,7 +939,11 @@ window.AFRAME.registerSystem('rapier-physics', {
     // If true, show wireframes around physics bodies.
     debug: { type: 'boolean', default: false },
     // Whether to output stats, and how to output them.  One or more of "console", "events", "panel"
-    stats: {type: 'array', default: []}
+    stats: {type: 'array', default: []},
+    // When the animation freezes, we may end up with big timesteps
+    // that the simulation will not handle well. Cap the timestep to
+    // this many milliseconds.
+    maxTimeStep: { type: 'number', default: 100 }
   },
   init: function () {
     const options = {
@@ -1072,7 +1076,7 @@ window.AFRAME.registerSystem('rapier-physics', {
 
     const engineStartTime = performance.now();
 
-    this.physics.step(timeDelta);
+    this.physics.step(Math.min(timeDelta, this.data.maxTimeStep));
 
     const world = this.physics.world;
     const events = this.physics.events;
