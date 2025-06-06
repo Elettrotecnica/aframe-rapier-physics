@@ -75,6 +75,20 @@ To create a physics body, both an `rapier-body` and at least one
 <a-box position="5 0.5 0" width="1" height="1" depth="1" rapier-body rapier-shape></a-box>
 ```
 
+## System
+
+### `rapier-physics`
+
+This system must be set on the `a-scene` to enable physics in your
+scene. A couple of options can be set to customize your simulation:
+
+| Property    | Default     | Description                                                  |
+| ----------- | ----------- | ------------------------------------------------------------ |
+| gravity     | `0 -9.81 0` | Gravity in your simulation. By default this is similar to that on Earth in m/s^2.  |
+| debug       | `false`     | When set, a wireframe will be drawn around collision shapes to make them visible. |
+| stats       | `[]`        | Whether to output stats, and how to output them.  One or more of `console`, `events`, `panel` |
+| maxTimeStep | `100`       | Physics engines may produce strange behaviors when computing simulation steps too far in the future and Rapier seems to make no exception. This option caps the number of milliseconds of the physics step, so that if the simulation is stopped (e.g. when the browser canvas becomes hidden), resuming will not try to simulate too big a timeframe. Set to positive infinity to disable. |
+
 ## Components
 
 ### `rapier-body`
