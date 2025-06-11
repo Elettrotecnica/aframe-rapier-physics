@@ -1189,6 +1189,9 @@ window.AFRAME.registerComponent('rapier-body', {
       this.el.emit('body-loaded');
     }
   },
+  syncToPhysics() {
+    this.system.physics?.syncBodyToObject(this.el.object3D);
+  },
   play: function () {
     this.createBody();
   },
