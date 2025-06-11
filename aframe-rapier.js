@@ -1103,7 +1103,7 @@ window.AFRAME.registerSystem('rapier-physics', {
         const impulse = manifold.contactImpulse();
 
         if (collider1.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          object1.el.emit(eventName, object1.el, {
+          object1.el.emit(eventName, {
             targetEl: object2.el,
             contactPoint: contactPoint1,
             targetContactPoint: contactPoint2,
@@ -1111,7 +1111,7 @@ window.AFRAME.registerSystem('rapier-physics', {
           });
         }
         if (collider1.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          object2.el.emit(eventName, object2.el, {
+          object2.el.emit(eventName, {
             targetEl: object1.el,
             contactPoint: contactPoint2,
             targetContactPoint: contactPoint1,
