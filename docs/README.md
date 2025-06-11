@@ -103,6 +103,8 @@ will your entity begin to collide with other objects.
 | type       | `Dynamic` | Options: `Dynamic`, `Fixed`, `KinematicPositionBased` and `KinematicVelocityBased`. See [body types](https://rapier.rs/docs/user_guides/bevy_plugin/rigid_bodies/#rigid-body-type). |
 | canSleep   | `true`    | Allow bodies to sleep when inactive. See [sleeping](https://rapier.rs/docs/user_guides/bevy_plugin/rigid_bodies/#sleeping) |
 | ccdEnabled | `false`   | Enable [Continuous Collision Detection](https://rapier.rs/docs/user_guides/javascript/advanced_collision_detection/#continuous-collision-detection). |
+| linearDamping  | `0`   | linear damping coefficient, affecting body's linear velocity. See [rigid_body_damping](https://rapier.rs/docs/user_guides/javascript/rigid_body_damping/) |
+| angularDamping | `0`   | angular damping coefficient, affecting body's angular velocity. See [rigid_body_damping](https://rapier.rs/docs/user_guides/javascript/rigid_body_damping/) |
 
 ### `rapier-shape`
 
