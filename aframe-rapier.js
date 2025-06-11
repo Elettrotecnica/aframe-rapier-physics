@@ -522,6 +522,8 @@ async function RapierPhysics(options) {
     desc.setTranslation( ...getWorldPosition(object) );
     desc.setRotation( getWorldQuaternion(object) );
     desc.setCcdEnabled( options.ccdEnabled );
+    desc.setLinearDamping( options.linearDamping );
+    desc.setAngularDamping( options.angularDamping );
 
     body = world.createRigidBody( desc );
 
@@ -590,6 +592,8 @@ async function RapierPhysics(options) {
     })();
     body.setBodyType(bodyType, false);
     body.enableCcd( options.ccdEnabled );
+    body.setLinearDamping( options.linearDamping );
+    body.setAngularDamping( options.angularDamping );
   }
 
   function updateCollider(object, collider, options, rebuild = false) {
@@ -1155,7 +1159,9 @@ window.AFRAME.registerComponent('rapier-body', {
       oneOf: ['Fixed', 'Dynamic', 'KinematicVelocityBased', 'KinematicPositionBased']
     },
     canSleep: { type: 'boolean', default: true },
-    ccdEnabled: { type: 'boolean', default: false }
+    ccdEnabled: { type: 'boolean', default: false },
+    linearDamping: { type: 'number', default: 0 },
+    angularDamping: { type: 'number', default: 0 }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];
