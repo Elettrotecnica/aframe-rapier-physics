@@ -1185,6 +1185,7 @@ window.AFRAME.registerComponent('rapier-body', {
       this.el.object3D,
       this.options
     );
+    this.syncToPhysics();
   },
   createBody() {
     if (this.body) return;
