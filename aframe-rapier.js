@@ -591,7 +591,7 @@ async function RapierPhysics(options) {
           RAPIER.RigidBodyType.Fixed;
       }
     })();
-    body.setBodyType(bodyType, false);
+    body.setBodyType(bodyType, true);
     body.enableCcd( options.ccdEnabled );
     body.setLinearDamping( options.linearDamping );
     body.setAngularDamping( options.angularDamping );
