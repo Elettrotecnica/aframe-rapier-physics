@@ -157,8 +157,8 @@ Example:
 | target      | —                                      | —       | Selector for a single entity to which current entity should be bound.                     |
 | anchor1     | — | `null` | Point where the joint is attached on the first rigid-body affected by this joint. Expressed in the local-space of the rigid-body. |
 | anchor2     | — | `null` | Point where the joint is attached on the second rigid-body affected by this joint. Expressed in the local-space of the rigid-body. |
-| frame1      | `type: fixed` (optional) | `0 0 0 1` | The reference orientation of the joint wrt. the first rigid-body. |
-| frame2      | `type: fixed` (optional) | `0 0 0 1` | The reference orientation of the joint wrt. the first rigid-body. |
+| frame1      | `type: fixed` (optional) | `null` | The reference orientation of the joint wrt. the first rigid-body. |
+| frame2      | `type: fixed` (optional) | `null` | The reference orientation of the joint wrt. the first rigid-body. |
 | axis | `type: generic, prismatic, revolute` | `0 0 1` | Axis used to constrain the movement. |
 | axesMask | `type: generic` | `null` | Mask representing the locked axes of the joint. See [JointAxesMask](https://rapier.rs/javascript3d/enums/JointAxesMask.html) |
 

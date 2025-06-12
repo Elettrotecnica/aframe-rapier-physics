@@ -96,6 +96,7 @@
 	</a-box>
       </a-entity>
 
+
       <!-- LOCK -->
       <a-entity position="0 0 -1">
         <a-text value="Lock" position="0 1.5 0" align="center"></a-text>
@@ -103,11 +104,13 @@
                position="0 1.0 0"
                scale="0.25 0.25 0.25"
                color="#777"
+	       rotation="45 45 45"
 	       rapier-body="type: Fixed"
 	       rapier-shape>
         </a-box>
         <a-box color="#F00"
                position="0 2.25 0"
+	       rotation="45 45 45"
                scale="0.25 0.25 0.25"
                rapier-body
 	       rapier-shape
@@ -156,7 +159,7 @@
 	       rapier-body
 	       rapier-shape
                force-pushable
-               rapier-constraint="type: prismatic; axis: 1 0 0; limitsEnabled: true; limitMin: -1.5; limitMax: -0.25; target: #slider-target">
+               rapier-constraint="type: prismatic; axis: 1 0 0; limitsEnabled: true; limitMin: -1; limitMax: 0; target: #slider-target">
         </a-sphere>
         <a-cylinder radius="0.05" height="2" position="0 1 0" rotation="0 0 90"></a-cylinder>
       </a-entity>

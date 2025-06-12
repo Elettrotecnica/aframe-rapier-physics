@@ -103,6 +103,7 @@ async function RapierPhysics(options) {
     new RapierDebugRenderer(scene, world) : null;
 
   const ZERO = new THREE.Vector3();
+  const IDENTITY = new THREE.Quaternion();
 
   const objects = [];
   const objectToBodyMap = new WeakMap();
@@ -652,89 +653,99 @@ async function RapierPhysics(options) {
     };
   })();
 
-  function createConstraint(object1, object2, options) {
-    const body1 = objectToBodyMap.get(object1);
-    if (!body1) return;
+  const createConstraint = (function () {
+    const q1 = new THREE.Quaternion();
+    const q2 = new THREE.Quaternion();
+    return function (object1, object2, options) {
+      const body1 = objectToBodyMap.get(object1);
+      if (!body1) return;
 
-    const body2 = objectToBodyMap.get(object2);
-    if (!body2) return;
+      const body2 = objectToBodyMap.get(object2);
+      if (!body2) return;
 
-    let params;
-    switch (options.type) {
-    case 'fixed':
-      params = RAPIER.JointData.fixed(
-        object2.position, options.frame1,
-        object1.position, options.frame2
-      );
-      break;
-    case 'generic':
-      const axeMask = RAPIER.JointAxesMask[options.axeMask];
-      params = RAPIER.JointData.generic(
-        options.anchor1, options.anchor2,
-        options.axis, axeMask
-      );
-      break;
-    case 'prismatic':
+      //
+      // Constraint defaults:
+      //
+      // the values for anchors and frames when everything is left to
+      // default have the intention of creating a constraint between
+      // the 2 objects at their exact current relative position and
+      // rotation. This is in particular what we want most of the time
+      // for a fixed constraint.
+      //
+      const dist = distanceVector(object1, object2);
+
+      object1.getWorldQuaternion(q1);
+      object2.getWorldQuaternion(q2);
+
       if (isNaN(options.anchor1.x)) {
-        Object.assign(options.anchor1, ZERO);
+        options.anchor1 = ZERO;
+      }
+      if (isNaN(options.frame1.x)) {
+        options.frame1 = q1.invert().multiply(q2);
       }
       if (isNaN(options.anchor2.x)) {
-        Object.assign(options.anchor2, ZERO);
+        options.anchor2 = dist.negate().applyQuaternion(q2.invert());
       }
-      params = RAPIER.JointData.prismatic(
-        options.anchor1, options.anchor2,
-        options.axis
-      );
-      if (options.limitsEnabled) {
-        params.limitsEnabled = true;
-        params.limits = [options.limitMin, options.limitMax];
+      if (isNaN(options.frame2.x)) {
+        options.frame2 = IDENTITY;
       }
-      break;
-    case 'revolute':
-      params = RAPIER.JointData.revolute(
-        options.anchor1, options.anchor2,
-        options.axis
-      );
-      break;
-    case 'rope':
-      params = RAPIER.JointData.rope(
-        options.length, options.anchor1,
-        options.anchor2
-      );
-      break;
-    case 'spherical':
-      params = RAPIER.JointData.spherical(
-        options.anchor1, options.anchor2
-      );
-      break;
-    case 'spring':
-      if (isNaN(options.anchor1.x) && isNaN(options.anchor2.x)) {
-        //
-        // No anchor specified: the spring is assumed to be as long as
-        // the distance between the two objects.
-        //
-        Object.assign(
-          options.anchor1,
-          distanceVector(object1, object2)
+
+      let params;
+      switch (options.type) {
+      case 'fixed':
+        params = RAPIER.JointData.fixed(
+          options.anchor1, options.frame1,
+          options.anchor2, options.frame2
         );
+        break;
+      case 'generic':
+        const axeMask = RAPIER.JointAxesMask[options.axeMask];
+        params = RAPIER.JointData.generic(
+          options.anchor1, options.anchor2,
+          options.axis, axeMask
+        );
+        break;
+      case 'prismatic':
+        params = RAPIER.JointData.prismatic(
+          options.anchor1,
+          options.anchor2,
+          options.axis
+        );
+        if (options.limitsEnabled) {
+          params.limitsEnabled = true;
+          params.limits = [options.limitMin, options.limitMax];
+        }
+        break;
+      case 'revolute':
+        params = RAPIER.JointData.revolute(
+          options.anchor1, options.anchor2,
+          options.axis
+        );
+        break;
+      case 'rope':
+        params = RAPIER.JointData.rope(
+          options.length, options.anchor1,
+          options.anchor2
+        );
+        break;
+      case 'spherical':
+        params = RAPIER.JointData.spherical(
+          options.anchor1, options.anchor2
+        );
+        break;
+      case 'spring':
+        params = RAPIER.JointData.spring(
+          options.restLength, options.stiffness, options.damping,
+          options.anchor1, options.anchor2
+        );
+        break;
+      default:
+        return null;
       }
-      if (isNaN(options.anchor1.x)) {
-        Object.assign(options.anchor1, ZERO);
-      }
-      if (isNaN(options.anchor2.x)) {
-        Object.assign(options.anchor2, ZERO);
-      }
-      params = RAPIER.JointData.spring(
-        options.restLength, options.stiffness, options.damping,
-        options.anchor1, options.anchor2
-      );
-      break;
-    default:
-      return null;
-    }
 
-    return world.createImpulseJoint(params, body1, body2, true);
-  }
+      return world.createImpulseJoint(params, body1, body2, true);
+    }
+  })();
 
   function removeConstraint( constraint ) {
     world.removeImpulseJoint(constraint, true);
@@ -1320,8 +1331,8 @@ window.AFRAME.registerComponent('rapier-constraint', {
     target: { type: 'selector' },
     anchor1: { type: 'vec3', default: null },
     anchor2: { type: 'vec3', default: null },
-    frame1: { type: 'vec4', default: { x: 0, y: 0, z: 0, w: 1} },
-    frame2: { type: 'vec4', default: { x: 0, y: 0, z: 0, w: 1} },
+    frame1: { type: 'vec4', default: null },
+    frame2: { type: 'vec4', default: null },
     axis: { type: 'vec3', default: { x: 0, y: 0, z: 1 } },
     length: { type: 'number', default: 0 },
     restLength: { type: 'number', default: 0 },
