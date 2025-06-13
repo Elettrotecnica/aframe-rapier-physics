@@ -404,10 +404,7 @@ async function RapierPhysics(options) {
   function createTriMeshShape(object, options) {
     const verticesAndIndexes = _getVerticesAndIndexes(object, options);
     const vertices = verticesAndIndexes.vertices;
-    // if the buffer is non-indexed, generate an index buffer
-    const indexes = verticesAndIndexes.indexes.length === 0 ?
-          Uint32Array.from( Array( parseInt( vertices.length / 3 ) ).keys() ) :
-          verticesAndIndexes.indexes;
+    const indexes = verticesAndIndexes.indexes;
 
     return RAPIER.ColliderDesc.trimesh( vertices, indexes );
   }
@@ -419,6 +416,8 @@ async function RapierPhysics(options) {
       vertices: [],
       indexes: []
     };
+    const inverse = new THREE.Matrix4();
+    const transform = new THREE.Matrix4();
     return function (object, options) {
       const vertices = verticesAndIndexes.vertices;
       const indexes = verticesAndIndexes.indexes;
@@ -436,19 +435,30 @@ async function RapierPhysics(options) {
 
       let indexOffset = 0;
 
+      inverse.copy(object.matrixWorld).invert();
       object.traverse(mesh => {
         if (
           mesh.isMesh &&
             (options.includeInvisible || (mesh.el && mesh.el.object3D.visible) || mesh.visible)
         ) {
-          const scale = getWorldScale(mesh);
+          if (mesh === object) {
+            transform.identity();
+          } else {
+            mesh.updateWorldMatrix(true);
+            transform.multiplyMatrices(inverse, mesh.matrixWorld);
+          }
 
           const geometry = mesh.geometry;
-          const positionAttribute = geometry.getAttribute( 'position' );
 
-          for (let i = 0; i < positionAttribute.count; i++) {
+          const positionAttribute = geometry.getAttribute( 'position' );
+          const nVertices = positionAttribute.count;
+
+          for (let i = 0; i < nVertices; i++) {
             vertex.fromBufferAttribute(positionAttribute, i);
-            vertex.multiply(scale);
+            //
+            // Apply model's internal transformations.
+            //
+            vertex.applyMatrix4(transform);
             vertices.push( vertex.x, vertex.y, vertex.z );
           }
 
@@ -457,8 +467,16 @@ async function RapierPhysics(options) {
             for ( let j = 0; j < index.count; ++ j ) {
               indexes.push( index.getX( j ) + indexOffset );
             }
-            indexOffset += geometry.attributes.position.count;
+          } else {
+            //
+            // Rapier demands an index to compute trimeshes. When the
+            // mesh is not indexed, compute a trivial one.
+            //
+            for ( let j = 0; j < nVertices; ++ j ) {
+              indexes.push( j + indexOffset );
+            }
           }
+          indexOffset += nVertices;
         }
       });
 
