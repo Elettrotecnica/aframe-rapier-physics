@@ -1,0 +1,77 @@
+<html>
+
+<head>
+  <!-- the AFrame library and 3rd party components -->
+  <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-environment-component@1.5.0/dist/aframe-environment-component.min.js"></script>
+  <script type="module" src="../../aframe-rapier.js"></script>
+  <link rel="stylesheet" href="../styles.css">
+  <script src="https://cdn.jsdelivr.net/gh/AdaRoseCannon/aframe-xr-boilerplate/simple-navmesh-constraint.js"></script>
+  <script src="model-utils.js"></script>
+  
+  <title>AFrame Trimesh Physics Demo</title>
+</head>
+
+<body>
+  <div class="text-overlay">
+    <p>Demonstration of a complex TriMesh used as a Fixed body.</p>
+    <p>Your avatar is a kinematic body that can push the ball
+      around. The ball bounces on wall and stairs around the
+      venue.</p>
+  </div>
+  <a class="code-link"
+     target="_blank"
+     href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/aframe-xr-boilerplate/index.html">
+    view code
+  </a>
+  <a-scene
+    rapier-physics="debug: true"
+    background="color:skyblue;"
+    renderer="alpha:true;physicallyCorrectLights:true;colorManagement:true;exposure:2;toneMapping:ACESFilmic;"
+    reflection="directionalLight:#dirlight;"
+  >
+    <a-assets>
+      <a-asset-item id="building-glb" src="venue.glb"></a-asset-item>
+      <a-asset-item id="navmesh-glb" src="navmesh.glb"></a-asset-item>
+      <img id="bake" src="Bake.webp">
+      <img id="ball-texture" src="ball.jpg">
+    </a-assets>
+
+    <a-camera
+      simple-navmesh-constraint="navmesh:.navmesh;fall:0.5;exclude:.navmesh-hole;"
+      >
+      <a-sphere
+	radius="1.6"
+	visible="false"
+	rapier-body="type: KinematicPositionBased"
+	rapier-shape="shape: Ball">
+      </a-sphere>
+    </a-camera>
+
+    <a-sphere
+      id="ball"
+      position="-1 3 -1.5"
+      radius="0.5"
+      material="src: #ball-texture"
+      rapier-body="type: Dynamic"
+      rapier-shape="shape: Ball">
+    </a-sphere>
+
+    <a-light id="dirlight" intensity="0.8" light="castShadow:true;type:directional" position="0 3 -6"></a-light>
+    <a-entity hide-on-enter-ar position="0 -0.2 0" environment="lighting:none;shadow:true;preset: osiris;"></a-entity>
+    <a-gltf-model class="navmesh" src="#navmesh-glb" visible="false"></a-gltf-model>
+    <a-gltf-model src="#building-glb"
+		  id="building"
+		  lightmap="src:#bake;intensity: 1.5; filter:Window,Ceiling,floor;"
+		  depthwrite="true"
+		  window-replace="Glass"
+		  no-tonemapping="Light"
+		  rapier-body="type: Fixed"
+		  rapier-shape="shape: TriMesh;"
+		  shadow="cast:false;receive:true;"
+		  ></a-gltf-model>
+
+  </a-scene>
+</body>
+
+</html>
