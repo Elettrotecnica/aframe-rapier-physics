@@ -435,6 +435,8 @@ async function RapierPhysics(options) {
 
       let indexOffset = 0;
 
+      const scale = getWorldScale(object);
+
       inverse.copy(object.matrixWorld).invert();
       object.traverse(mesh => {
         if (
@@ -458,6 +460,7 @@ async function RapierPhysics(options) {
             //
             // Apply model's internal transformations.
             //
+            vertex.multiply(scale);
             vertex.applyMatrix4(transform);
             vertices.push( vertex.x, vertex.y, vertex.z );
           }
@@ -466,14 +469,6 @@ async function RapierPhysics(options) {
             const index = geometry.index;
             for ( let j = 0; j < index.count; ++ j ) {
               indexes.push( index.getX( j ) + indexOffset );
-            }
-          } else {
-            //
-            // Rapier demands an index to compute trimeshes. When the
-            // mesh is not indexed, compute a trivial one.
-            //
-            for ( let j = 0; j < nVertices; ++ j ) {
-              indexes.push( j + indexOffset );
             }
           }
           indexOffset += nVertices;
