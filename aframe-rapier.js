@@ -1179,8 +1179,8 @@ window.AFRAME.registerComponent('rapier-body', {
     this.options = Object.assign({}, this.data);
   },
   update: function () {
-    if (!this.body) return;
     Object.assign(this.options, this.data);
+    if (!this.body) return;
     this.system.physics.updateBody(
       this.el.object3D,
       this.options
@@ -1261,8 +1261,8 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.oldScale.copy(scale);
   },
   update: function () {
-    if (!this.collider) return;
     Object.assign(this.options, this.data);
+    if (!this.collider) return;
     this.system.physics.updateCollider(
       this.el.object3D,
       this.collider,
