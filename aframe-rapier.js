@@ -276,7 +276,7 @@ async function RapierPhysics(options) {
           // stored in column-major order.
           //
           const k = j * 4 * width + i * 4;
-          const intensity = ((pix[k] + pix[k+1] + pix[k+2]) / 3.0) / 255.0;
+          const intensity = (pix[k] + pix[k+1] + pix[k+2]) / (3.0 * 255.0);
           data.push( intensity );
         }
       }
