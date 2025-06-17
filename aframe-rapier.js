@@ -112,64 +112,83 @@ async function RapierPhysics(options) {
   let numCollisions = 0;
   let numManifolds = 0;
 
-  const _setOptions = (function() {
+  function _setOptions(object, options) {
+    // fit = true: a single shape is automatically sized to bound all meshes within the entity.
+    // fit = false: a single shape is sized manually. Requires halfExtents or radius.
+    options.fit = options.hasOwnProperty('fit') ?
+      options.fit : true;
+
+    options.shape = options.shape || 'convexHull';
+
+    options.minHalfExtent = options.hasOwnProperty('minHalfExtent') ?
+      options.minHalfExtent : 0;
+
+    options.maxHalfExtent = options.hasOwnProperty('maxHalfExtent') ?
+      options.maxHalfExtent : Number.POSITIVE_INFINITY;
+
+    options.axis = options.axis || 'y';
+
+    options.includeInvisible = options.hasOwnProperty('includeInvisible') ?
+      options.includeInvisible : false;
+
+    if (!options.hasOwnProperty('halfExtents')) {
+      options.halfExtents = { x: 1, y: 1, z: 1 };
+    }
+
+    if (isNaN(options.radius)) {
+      options.radius = 0
+    }
+
+    if (!options.hasOwnProperty('heights')) {
+      options.heights = [];
+    }
+
+    if (!options.hasOwnProperty('heightFieldScale')) {
+      options.heightFieldScale = { x: 1, y: 1, z: 1 };
+    }
+
+    if (!options.hasOwnProperty('widthSegments')) {
+      options.widthSegments = 2
+    }
+
+    if (!options.hasOwnProperty('heightSegments')) {
+      options.heightSegments = 2
+    }
+
+    _guessShapeOptions(object, options);
+  }
+
+  const _guessShapeOptions = (function() {
     const meshes = [];
     return function (object, options) {
-      // fit = true: a single shape is automatically sized to bound all meshes within the entity.
-      // fit = false: a single shape is sized manually. Requires halfExtents or radius.
-      options.fit = options.hasOwnProperty('fit') ?
-        options.fit : true;
-
-      options.shape = options.shape || 'convexHull';
-
-      options.minHalfExtent = options.hasOwnProperty('minHalfExtent') ?
-        options.minHalfExtent : 0;
-
-      options.maxHalfExtent = options.hasOwnProperty('maxHalfExtent') ?
-        options.maxHalfExtent : Number.POSITIVE_INFINITY;
-
-      options.axis = options.axis || 'y';
-
-      options.includeInvisible = options.hasOwnProperty('includeInvisible') ?
-        options.includeInvisible : false;
-
-      if (!options.hasOwnProperty('halfExtents')) {
-        options.halfExtents = { x: 1, y: 1, z: 1 };
-      }
-
-      if (isNaN(options.radius)) {
-        options.radius = 0
-      }
-
+      //
+      // Here we try to guess the shape and shape parameters
+      // directly from the geometries. We do this only for trivial
+      // cases where the mesh is a single primitive.
+      //
       const scale = getWorldScale(object);
 
-      if (options.fit && scale.x === scale.y && scale.y === scale.z) {
-        //
-        // Here we try to guess the shape and shape parameters
-        // directly from the geometries. We do this only for trivial
-        // cases where the mesh is a single primitive. We can only
-        // support non-deforming scale with this method.
-        //
-        meshes.length = 0;
-        object.getObjectsByProperty('isMesh', true, meshes);
-        if (meshes.length === 1) {
-          const geometry = meshes[0].geometry;
-          const parameters = geometry.parameters;
+      meshes.length = 0;
+      object.getObjectsByProperty('isMesh', true, meshes);
+      if (options.fit && meshes.length === 1) {
+        const geometry = meshes[0].geometry;
+        const material = meshes[0].material;
+        const parameters = geometry.parameters;
 
-          options.halfExtents.x = parameters?.width !== undefined ?
-            parameters.width / 2 : 0.5;
-          options.halfExtents.y = parameters?.height !== undefined ?
-            parameters.height / 2 : 0.5;
-          options.halfExtents.z = parameters?.depth !== undefined ?
-            parameters.depth / 2 : 0.5;
+        options.halfExtents.x = parameters?.width !== undefined ?
+          parameters.width / 2 : 0.5;
+        options.halfExtents.y = parameters?.height !== undefined ?
+          parameters.height / 2 : 0.5;
+        options.halfExtents.z = parameters?.depth !== undefined ?
+          parameters.depth / 2 : 0.5;
 
+        if (scale.x === scale.y && scale.y === scale.z) {
+          //
+          // We only support non-deforming scale with these shapes.
+          //
           options.fit = false;
 
           switch (geometry.type) {
-          case 'PlaneGeometry':
-            options.halfExtents.z = 0;
-            options.shape = 'Cuboid';
-            break;
           case 'BoxGeometry':
             options.shape = 'Cuboid';
             break;
@@ -187,7 +206,36 @@ async function RapierPhysics(options) {
           default:
             options.fit = true;
           }
+        }
 
+        if (options.fit &&
+            geometry.type === 'PlaneGeometry') {
+          options.shape = 'Heightfield';
+
+          //
+          // With THREE, the minumum number of segments is one. With
+          // Rapier, it is 2.
+          //
+          options.widthSegments = parameters.widthSegments + 1;
+          options.heightSegments = parameters.widthSegments + 1;
+
+          if (material.displacementBias !== undefined) {
+            options.offset.z += material.displacementBias * scale.z;
+          }
+
+          options.heightFieldScale.x = scale.x * parameters.width;
+          options.heightFieldScale.z = scale.z * parameters.height;
+
+          if (material.displacementScale !== undefined) {
+            options.heightFieldScale.y = scale.y * material.displacementScale;
+          }
+
+          _getHeightData(
+            material.displacementMap?.image,
+            options.widthSegments,
+            options.heightSegments,
+            options.heights
+          );
         }
       }
 
@@ -196,7 +244,41 @@ async function RapierPhysics(options) {
       options.halfExtents.z *= scale.z;
 
       options.radius *= scale[options.axis];
-    };
+    }
+  })();
+
+  const _getHeightData = (function () {
+    const canvas = document.createElement( 'canvas' );
+    const context = canvas.getContext( '2d' );
+    return function ( img, width, height, data ) {
+      let pix;
+      if (img) {
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(img, 0, 0, width, height);
+        pix = context.getImageData(0, 0, width, height).data;
+      }
+
+      data.length = 0;
+      for (let i = 0; i < width; i++) {
+        for (let j = 0; j < height; j++) {
+          if (pix) {
+            //
+            // Compute the height data as a number between 0 and 1 from
+            // the RGB intensity of each pixel. Result must be a matrix
+            // stored in column-major order.
+            //
+            const k = j * 4 * width + i * 4;
+            const intensity = ((pix[k] + pix[k+1] + pix[k+2]) / 3.0) / 255.0;
+            data.push( intensity );
+          } else {
+            data.push( 0 );
+          }
+        }
+      }
+
+      return data;
+    }
   })();
 
   // returns the bounding box for the geometries underneath `root`.
@@ -409,6 +491,28 @@ async function RapierPhysics(options) {
     return RAPIER.ColliderDesc.trimesh( vertices, indexes );
   }
 
+  const createHeightfield = (function () {
+    const offset = new THREE.Quaternion();
+    offset.setFromAxisAngle( new THREE.Vector3( 1, 0, 0 ), Math.PI / 2 );
+    return function (object, options) {
+      //
+      // Rapier counts one segment less.
+      //
+      const desc = RAPIER.ColliderDesc.heightfield(
+        options.heightSegments - 1,
+        options.widthSegments - 1,
+        options.heights,
+        options.heightFieldScale
+      );
+      //
+      // Rapier creates heightfield shapes with 90° offset with
+      // respect to THREE objects.
+      //
+      desc.setRotation(offset);
+      return desc;
+    };
+  })();
+
   const _getVerticesAndIndexes = (function() {
     const vertex = new THREE.Vector3();
     const quaternion = new THREE.Quaternion();
@@ -505,6 +609,9 @@ async function RapierPhysics(options) {
 
     case 'TriMesh':
       return createTriMeshShape(object, options);
+
+    case 'Heightfield':
+      return createHeightfield(object, options);
 
     }
 
@@ -788,7 +895,7 @@ async function RapierPhysics(options) {
     impulseJoints.forEachJointHandleAttachedToRigidBody(body.handle, (handle) => {
       const joint = impulseJoints.get(handle);
       joint.body1() === body ? joint.body2().wakeUp() : joint.body1().wakeUp();
-    });
+   });
   }
 
   function step(timeDelta) {
@@ -1261,7 +1368,11 @@ window.AFRAME.registerComponent('rapier-shape', {
     emitCollisionEvents: { type: 'boolean', default: false },
     enabled: { type: 'boolean', default: true },
     collisionGroups: {type: 'number', default: NaN},
-    solverGroups: {type: 'number', default: NaN}
+    solverGroups: {type: 'number', default: NaN},
+    heightSegments: {type: 'number', default: 1},
+    widthSegments: {type: 'number', default: 1},
+    heightFieldScale: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
+    heights: { type: 'array', default: [] }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];

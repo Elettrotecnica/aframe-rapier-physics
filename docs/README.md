@@ -117,7 +117,7 @@ specify one manually.
 
 | Property            | Dependencies                                              | Default                       | Description                                                                                                                               |
 | ------------------- | --------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| shape               | —                                                         | `ConvexHull`                        | Options: `Cuboid`, `Cylinder`, `Capsule`, `Cone`, `Ball`, `ConvexHull`, `TriMesh`. see [Shapes](https://rapier.rs/docs/user_guides/javascript/colliders/#shapes). |
+| shape               | —                                                         | `ConvexHull`                        | Options: `Cuboid`, `Cylinder`, `Capsule`, `Cone`, `Ball`, `ConvexHull`, `TriMesh` and `Heigtfield`. see [Shapes](https://rapier.rs/docs/user_guides/javascript/colliders/#shapes). |
 | fit                 | —                                                         | `true`                         | Flag deciding if we should compute the collision shape automatically |
 | halfExtents         | `fit: false` and any shape other than `ConvexHull` or `TriMesh` | `1 1 1`                     | Set the halfExtents to use.                        |
 | offset              | —                                                               | `0 0 0`                     | Offset of this shape with respect to the entity    |
@@ -137,6 +137,11 @@ specify one manually.
 | enabled | —                                                               | `true`                           | When set to `false` disables all physics on this entity. |
 | collisionGroups | —                                                       | `NaN`                           | When set to a number, controls the [collision groups](https://rapier.rs/docs/user_guides/javascript/colliders/#collider-type) for this entity |
 | solverGroups | —                                                       | `NaN`                           | When set to a number, controls the [solver groups](https://rapier.rs/docs/user_guides/javascript/colliders/#collider-type) for this entity |
+| heightSegments | `Heightfield` shape and `fit` set to `false` | `1` | The number of vertical segments for the Heightfield |
+| widthSegments | `Heightfield` shape and `fit` set to `false` | `1` | The number of horizontal segments for the Heightfield |
+| heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. |
+| heights | `Heightfield` shape and `fit` set to `false`| `[]` | The heights of the heightfield along its local y axis, provided as a matrix stored in column-major order. |
+
 
 ### `rapier-constraint`
 
