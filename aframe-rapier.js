@@ -210,33 +210,39 @@ async function RapierPhysics(options) {
 
         if (options.fit &&
             geometry.type === 'PlaneGeometry') {
-          options.shape = 'Heightfield';
+          if (material.displacementMap?.image) {
+            options.shape = 'Heightfield';
 
-          //
-          // With THREE, the minumum number of segments is one. With
-          // Rapier, it is 2.
-          //
-          options.widthSegments = parameters.widthSegments + 1;
-          options.heightSegments = parameters.widthSegments + 1;
+            //
+            // With THREE, the minumum number of segments is one. With
+            // Rapier, it is 2.
+            //
+            options.widthSegments = parameters.widthSegments + 1;
+            options.heightSegments = parameters.widthSegments + 1;
 
-          if (material.displacementBias !== undefined) {
-            options.offset.z += material.displacementBias * scale.z;
+            if (material.displacementBias !== undefined) {
+              options.offset.z += material.displacementBias * scale.z;
+            }
+
+            options.heightFieldScale.x = scale.x * parameters.width;
+            options.heightFieldScale.z = scale.z * parameters.height;
+
+            if (material.displacementScale !== undefined) {
+              options.heightFieldScale.y = scale.y * material.displacementScale;
+            }
+
+            _getHeightData(
+              material.displacementMap.image,
+              options.widthSegments,
+              options.heightSegments,
+              options.heights
+            );
+          } else {
+            options.shape = 'Cuboid';
+            options.halfExtents.z = 0;
           }
-
-          options.heightFieldScale.x = scale.x * parameters.width;
-          options.heightFieldScale.z = scale.z * parameters.height;
-
-          if (material.displacementScale !== undefined) {
-            options.heightFieldScale.y = scale.y * material.displacementScale;
-          }
-
-          _getHeightData(
-            material.displacementMap?.image,
-            options.widthSegments,
-            options.heightSegments,
-            options.heights
-          );
         }
+        options.fit = false;
       }
 
       options.halfExtents.x *= scale.x;
@@ -251,29 +257,22 @@ async function RapierPhysics(options) {
     const canvas = document.createElement( 'canvas' );
     const context = canvas.getContext( '2d' );
     return function ( img, width, height, data ) {
-      let pix;
-      if (img) {
-        canvas.width = width;
-        canvas.height = height;
-        context.drawImage(img, 0, 0, width, height);
-        pix = context.getImageData(0, 0, width, height).data;
-      }
+      canvas.width = width;
+      canvas.height = height;
+      context.drawImage(img, 0, 0, width, height);
+      const pix = context.getImageData(0, 0, width, height).data;
 
       data.length = 0;
       for (let i = 0; i < width; i++) {
         for (let j = 0; j < height; j++) {
-          if (pix) {
-            //
-            // Compute the height data as a number between 0 and 1 from
-            // the RGB intensity of each pixel. Result must be a matrix
-            // stored in column-major order.
-            //
-            const k = j * 4 * width + i * 4;
-            const intensity = ((pix[k] + pix[k+1] + pix[k+2]) / 3.0) / 255.0;
-            data.push( intensity );
-          } else {
-            data.push( 0 );
-          }
+          //
+          // Compute the height data as a number between 0 and 1 from
+          // the RGB intensity of each pixel. Result must be a matrix
+          // stored in column-major order.
+          //
+          const k = j * 4 * width + i * 4;
+          const intensity = ((pix[k] + pix[k+1] + pix[k+2]) / 3.0) / 255.0;
+          data.push( intensity );
         }
       }
 
