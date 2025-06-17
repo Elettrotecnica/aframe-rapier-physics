@@ -1,0 +1,46 @@
+<html>
+  <head>
+    <title>Examples - Heigtfield</title>
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script type="module" src="../aframe-rapier.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="text-overlay">
+      <p>A Heightfield collider is created automatically from the plane displacementMap.</p>
+    </div>
+    <a class="code-link"
+       target="_blank"
+       href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/heightfield.html">
+      view code
+    </a>
+    <a-scene rapier-physics="debug: true;">
+      <a-assets>
+	<img src="heightfield-texture.jpg" id="texture">
+	<img src="heightfield-displacement-map.jpg" id="displacement-map">
+      </a-assets>
+      <a-sphere
+	position="0 3.75 -2"
+	color="#EF2D5E"
+	radius="0.5"
+	shadow
+	rapier-body
+        rapier-shape
+        >
+      </a-sphere>
+      <a-plane
+        position="0 0 -2"
+        rotation="-90 0 0"
+        width="7.2"
+        height="3.6"
+	segments-width="100"
+	segments-height="100"
+	displacement-map="#displacement-map"
+	src="#texture"
+	rapier-body="type: Fixed"
+	rapier-shape
+      ></a-plane>
+      <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+  </body>
+</html>
