@@ -137,9 +137,9 @@ specify one manually.
 | enabled | —                                                               | `true`                           | When set to `false` disables all physics on this entity. |
 | collisionGroups | —                                                       | `NaN`                           | When set to a number, controls the [collision groups](https://rapier.rs/docs/user_guides/javascript/colliders/#collider-type) for this entity |
 | solverGroups | —                                                       | `NaN`                           | When set to a number, controls the [solver groups](https://rapier.rs/docs/user_guides/javascript/colliders/#collider-type) for this entity |
-| heightSegments | `Heightfield` shape and `fit` set to `false` | `1` | The number of vertical segments for the Heightfield |
-| widthSegments | `Heightfield` shape and `fit` set to `false` | `1` | The number of horizontal segments for the Heightfield |
-| heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. |
+| heightSegments | `Heightfield` shape and `fit` set to `false` | `2` | The number of vertical segments for the Heightfield. `2` is the minimum required by Rapier and corresponds to `1` in three.js logics. |
+| widthSegments | `Heightfield` shape and `fit` set to `false` | `2` | The number of horizontal segments for the Heightfield. `2` is the minimum required by Rapier and corresponds to `1` in three.js logics. |
+| heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. This is not the same as the displacementScale, as it is used to control the size of the shape for all three dimensions. |
 | heights | `Heightfield` shape and `fit` set to `false`| `[]` | The heights of the heightfield along its local y axis, provided as a matrix stored in column-major order. |
 
 

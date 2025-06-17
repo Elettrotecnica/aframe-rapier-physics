@@ -1374,8 +1374,8 @@ window.AFRAME.registerComponent('rapier-shape', {
     enabled: { type: 'boolean', default: true },
     collisionGroups: {type: 'number', default: NaN},
     solverGroups: {type: 'number', default: NaN},
-    heightSegments: {type: 'number', default: 1},
-    widthSegments: {type: 'number', default: 1},
+    heightSegments: {type: 'number', default: 2},
+    widthSegments: {type: 'number', default: 2},
     heightFieldScale: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
     heights: { type: 'array', default: [] }
   },
