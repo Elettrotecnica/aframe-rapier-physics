@@ -34,6 +34,15 @@ const getWorldQuaternion = (function () {
   };
 })();
 
+const getObjectsByProperty = (function () {
+  const objects = [];
+  return function (object, property, value) {
+    objects.length = 0;
+    object.getObjectsByProperty(property, value, objects);
+    return objects;
+  };
+})();
+
 /*
   This is useful when computing primitive collision shapes for models
   that do not have the origin at the center.
@@ -158,100 +167,96 @@ async function RapierPhysics(options) {
     _guessShapeOptions(object, options);
   }
 
-  const _guessShapeOptions = (function() {
-    const meshes = [];
-    return function (object, options) {
-      //
-      // Here we try to guess the shape and shape parameters
-      // directly from the geometries. We do this only for trivial
-      // cases where the mesh is a single primitive.
-      //
-      const scale = getWorldScale(object);
+  function _guessShapeOptions(object, options) {
+    //
+    // Here we try to guess the shape and shape parameters
+    // directly from the geometries. We do this only for trivial
+    // cases where the mesh is a single primitive.
+    //
+    const scale = getWorldScale(object);
 
-      meshes.length = 0;
-      object.getObjectsByProperty('isMesh', true, meshes);
-      if (options.fit && meshes.length === 1) {
-        const geometry = meshes[0].geometry;
-        const material = meshes[0].material;
-        const parameters = geometry.parameters;
+    const meshes = getObjectsByProperty(object, 'isMesh', true);
+    if (options.fit && meshes.length === 1) {
+      const geometry = meshes[0].geometry;
+      const material = meshes[0].material;
+      const parameters = geometry.parameters;
 
-        options.halfExtents.x = parameters?.width !== undefined ?
-          parameters.width / 2 : 0.5;
-        options.halfExtents.y = parameters?.height !== undefined ?
-          parameters.height / 2 : 0.5;
-        options.halfExtents.z = parameters?.depth !== undefined ?
-          parameters.depth / 2 : 0.5;
+      options.halfExtents.x = parameters?.width !== undefined ?
+        parameters.width / 2 : 0.5;
+      options.halfExtents.y = parameters?.height !== undefined ?
+        parameters.height / 2 : 0.5;
+      options.halfExtents.z = parameters?.depth !== undefined ?
+        parameters.depth / 2 : 0.5;
 
-        if (scale.x === scale.y && scale.y === scale.z) {
-          //
-          // We only support non-deforming scale with these shapes.
-          //
-          options.fit = false;
-
-          switch (geometry.type) {
-          case 'BoxGeometry':
-            options.shape = 'Cuboid';
-            break;
-          case 'SphereGeometry':
-            options.radius = parameters.radius;
-            options.shape = 'Ball';
-            break;
-          case 'CylinderGeometry':
-            if (parameters.radiusTop ===
-                parameters.radiusBottom) {
-              options.radius = parameters.radiusTop;
-              options.shape = 'Cylinder';
-            }
-            break;
-          default:
-            options.fit = true;
-          }
-        }
-
-        if (options.fit &&
-            geometry.type === 'PlaneGeometry') {
-          if (material.displacementMap?.image) {
-            options.shape = 'Heightfield';
-
-            //
-            // With THREE, the minumum number of segments is one. With
-            // Rapier, it is 2.
-            //
-            options.widthSegments = parameters.widthSegments + 1;
-            options.heightSegments = parameters.widthSegments + 1;
-
-            if (material.displacementBias !== undefined) {
-              options.offset.z += material.displacementBias * scale.z;
-            }
-
-            options.heightFieldScale.x = scale.x * parameters.width;
-            options.heightFieldScale.z = scale.z * parameters.height;
-
-            if (material.displacementScale !== undefined) {
-              options.heightFieldScale.y = scale.y * material.displacementScale;
-            }
-
-            _getHeightData(
-              material.displacementMap.image,
-              options.widthSegments,
-              options.heightSegments,
-              options.heights
-            );
-          } else {
-            options.shape = 'Cuboid';
-            options.halfExtents.z = 0;
-          }
-        }
+      if (scale.x === scale.y && scale.y === scale.z) {
+        //
+        // We only support non-deforming scale with these shapes.
+        //
         options.fit = false;
+
+        switch (geometry.type) {
+        case 'BoxGeometry':
+          options.shape = 'Cuboid';
+          break;
+        case 'SphereGeometry':
+          options.radius = parameters.radius;
+          options.shape = 'Ball';
+          break;
+        case 'CylinderGeometry':
+          if (parameters.radiusTop ===
+              parameters.radiusBottom) {
+            options.radius = parameters.radiusTop;
+            options.shape = 'Cylinder';
+          }
+          break;
+        default:
+          options.fit = true;
+        }
       }
 
-      options.halfExtents.x *= scale.x;
-      options.halfExtents.y *= scale.y;
-      options.halfExtents.z *= scale.z;
+      if (options.fit &&
+          geometry.type === 'PlaneGeometry') {
+        if (material.displacementMap?.image) {
+          options.shape = 'Heightfield';
 
-      options.radius *= scale[options.axis];
+          //
+          // With THREE, the minumum number of segments is one. With
+          // Rapier, it is 2.
+          //
+          options.widthSegments = parameters.widthSegments + 1;
+          options.heightSegments = parameters.widthSegments + 1;
+
+          if (material.displacementBias !== undefined) {
+            options.offset.z += material.displacementBias * scale.z;
+          }
+
+          options.heightFieldScale.x = scale.x * parameters.width;
+          options.heightFieldScale.z = scale.z * parameters.height;
+
+          if (material.displacementScale !== undefined) {
+            options.heightFieldScale.y = scale.y * material.displacementScale;
+          }
+
+          _getHeightData(
+            material.displacementMap.image,
+            options.widthSegments,
+            options.heightSegments,
+            options.heights
+          );
+        } else {
+          options.shape = 'Cuboid';
+          options.halfExtents.z = 0;
+        }
+      }
+      options.fit = false;
     }
-  })();
+
+    options.halfExtents.x *= scale.x;
+    options.halfExtents.y *= scale.y;
+    options.halfExtents.z *= scale.z;
+
+    options.radius *= scale[options.axis];
+  };
 
   const _getHeightData = (function () {
     const canvas = document.createElement( 'canvas' );
@@ -541,11 +546,12 @@ async function RapierPhysics(options) {
       const scale = getWorldScale(object);
 
       inverse.copy(object.matrixWorld).invert();
-      object.traverse(mesh => {
-        if (
-          mesh.isMesh &&
-            (options.includeInvisible || (mesh.el && mesh.el.object3D.visible) || mesh.visible)
-        ) {
+      const meshes = getObjectsByProperty(object, 'isMesh', true);
+      for (const mesh of meshes) {
+        if (options.includeInvisible ||
+            mesh.visible ||
+            (mesh.el && mesh.el.object3D.visible)
+           ) {
           if (mesh === object) {
             transform.identity();
           } else {
@@ -576,7 +582,7 @@ async function RapierPhysics(options) {
           }
           indexOffset += nVertices;
         }
-      });
+      }
 
       object.quaternion.copy(quaternion);
 
