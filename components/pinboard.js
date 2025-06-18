@@ -60,10 +60,21 @@ AFRAME.registerComponent('dynamic-ball', {
 
       // Explicitly specifying a shape is more efficient than auto-fitting.
       el.setAttribute('rapier-body', 'type: Dynamic');
-      el.setAttribute('rapier-shape', 'mass: 1; shape: Ball; fit: false; radius: 0.3');
+      el.setAttribute('rapier-shape', 'mass: 1; shape: Ball; fit: false; radius: 0.3; emitCollisionEvents: true;');
 
-      // Set material rather than color - see: https://github.com/aframevr/aframe/issues/5203
       el.setAttribute('material', 'color: yellow')
+
+      el.addEventListener('collidestart', (e) => {
+        if (e.detail.targetEl.tagName === 'A-SPHERE') {
+          el.setAttribute('material', 'color: blue');
+        }
+      });
+      el.addEventListener('collideend', (e) => {
+        if (e.detail.targetEl.tagName === 'A-SPHERE') {
+          el.setAttribute('material', 'color: yellow');
+        }
+      });
+
   },
 
   tick() {

@@ -1102,6 +1102,9 @@ window.AFRAME.registerSystem('rapier-physics', {
 
     })();
 
+    this.bodyLoadedEvent = new window.Event('body-loaded');
+    this.collisionEventDetail = {};
+
   },
   initStats() {
     // Data used for performance monitoring.
@@ -1239,20 +1242,18 @@ window.AFRAME.registerSystem('rapier-physics', {
         const impulse = manifold.contactImpulse();
 
         if (collider1.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          object1.el.emit(eventName, {
-            targetEl: object2.el,
-            contactPoint: contactPoint1,
-            targetContactPoint: contactPoint2,
-            impulse: impulse
-          });
+          this.collisionEventDetail.targetEl = object2.el;
+          this.collisionEventDetail.contactPoint = contactPoint1;
+          this.collisionEventDetail.targetContactPoint = contactPoint2;
+          this.collisionEventDetail.impulse = impulse;
+          object1.el.emit(eventName, this.collisionEventDetail);
         }
-        if (collider1.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          object2.el.emit(eventName, {
-            targetEl: object1.el,
-            contactPoint: contactPoint2,
-            targetContactPoint: contactPoint1,
-            impulse: impulse
-          });
+        if (collider2.activeEvents() !== RAPIER.ActiveEvents.NONE) {
+          this.collisionEventDetail.targetEl = object1.el;
+          this.collisionEventDetail.contactPoint = contactPoint2;
+          this.collisionEventDetail.targetContactPoint = contactPoint1;
+          this.collisionEventDetail.impulse = impulse;
+          object2.el.emit(eventName, this.collisionEventDetail);
         }
       });
     });
@@ -1322,7 +1323,7 @@ window.AFRAME.registerComponent('rapier-body', {
         this.el.object3D,
         this.options
       );
-      this.el.emit('body-loaded');
+      this.el.dispatchEvent(this.system.bodyLoadedEvent);
     }
   },
   syncToPhysics() {
