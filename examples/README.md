@@ -17,4 +17,5 @@ the following collection of examples have been prepared.
 | Performance test: 100 balls rolling down a peg board, with timing data from physics engine. | [**OK**](perf.html) |
 | A simplified version of [aframe-xr-boilerplate](https://github.com/AdaRoseCannon/aframe-xr-boilerplate) to demonstrate the use of a Fixed TriMesh from a complex model. | [**OK**](aframe-xr-boilerplate/) |
 | A Heightfield fixed collision shape computed automatically from the material displacementMap. | [**OK**](heightfield.html) |
+| A Heightfield fixed collision shape specified manually. | [**OK**](heightfield-manual.html) |
 

@@ -1,0 +1,39 @@
+<html>
+  <head>
+    <title>Examples - Heigtfield</title>
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script type="module" src="../aframe-rapier.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="text-overlay">
+      <p>A Heightfield collider is created manually by specifying an array of heights. Note that because we are still fitting the shape, we do not need to specify a scale manually.</p>
+    </div>
+    <a class="code-link"
+       target="_blank"
+       href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/heightfield-manual.html">
+      view code
+    </a>
+    <a-scene rapier-physics="debug: true;">
+      <a-sphere
+	position="0 3.75 -2"
+	color="#EF2D5E"
+	radius="0.5"
+	shadow
+	rapier-body
+        rapier-shape
+        >
+      </a-sphere>
+      <a-plane
+        position="0 0 -2"
+        rotation="-90 0 0"
+	color="blue"
+        width="5"
+        height="5"
+	rapier-body="type: Fixed"
+	rapier-shape="shape: Heightfield; widthSegments: 6; heightSegments: 6; heights: 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1;"
+      ></a-plane>
+      <a-sky color="#ECECEC"></a-sky>
+    </a-scene>
+  </body>
+</html>
