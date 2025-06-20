@@ -167,37 +167,30 @@ async function RapierPhysics(options) {
   }
 
   function _guessShapeOptions(object, options) {
-    //
-    // Here we try to guess the shape and shape parameters
-    // directly from the geometries. We do this only for trivial
-    // cases where the mesh is a single primitive.
-    //
-    const scale = getWorldScale(object);
+    if (!options.fit) return;
 
     const meshes = getObjectsByProperty(object, 'isMesh', true);
-    if (options.fit && meshes.length === 1) {
+    if (meshes.length === 1) {
+      //
+      // Here we try to guess the shape and shape parameters
+      // directly from the geometries. We do this only for trivial
+      // cases where the mesh is a single primitive.
+      //
       const geometry = meshes[0].geometry;
       const material = meshes[0].material;
       const parameters = geometry.parameters;
 
-      if (parameters?.width !== undefined) {
-        options.halfExtents.x = parameters.width * 0.5;
-      }
-      if (parameters?.height !== undefined) {
-        options.halfExtents.y = parameters.height * 0.5;
-      }
-      if (parameters?.depth !== undefined) {
-        options.halfExtents.z = parameters.depth * 0.5;
-      }
-
-      options.fit = false;
+      const scale = getWorldScale(object);
 
       if (geometry.type === 'BoxGeometry') {
-
+        options.halfExtents.x = parameters.width * 0.5 * scale.x;
+        options.halfExtents.y = parameters.height * 0.5 * scale.y;
+        options.halfExtents.z = parameters.depth * 0.5 * scale.z;
         options.shape = 'Cuboid';
+        return;
+      }
 
-      } else if (geometry.type === 'PlaneGeometry') {
-
+      if (geometry.type === 'PlaneGeometry') {
         if (options.heights.length > 0 || material.displacementMap?.image) {
           options.shape = 'Heightfield';
 
@@ -230,37 +223,64 @@ async function RapierPhysics(options) {
           }
         } else {
           options.shape = 'Cuboid';
+          options.halfExtents.x = parameters.width * 0.5 * scale.x;
+          options.halfExtents.y = parameters.height * 0.5 * scale.y;
           options.halfExtents.z = 0;
         }
 
-      } else if (scale.x === scale.y && scale.y === scale.z) {
+        return;
+      }
+
+      if (scale.x === scale.y && scale.y === scale.z) {
         //
         // We only support non-deforming scale with these shapes.
         //
-        switch (geometry.type) {
-        case 'SphereGeometry':
-          options.radius = parameters.radius;
+        if (geometry.type === 'SphereGeometry') {
           options.shape = 'Ball';
-          break;
-        case 'CylinderGeometry':
-          if (parameters.radiusTop ===
-              parameters.radiusBottom) {
-            options.radius = parameters.radiusTop;
-            options.shape = 'Cylinder';
-          }
-          break;
-        default:
-          options.fit = true;
+          options.radius = parameters.radius * scale[options.axis];
+          return;
+        }
+
+        if (geometry.type === 'CylinderGeometry' &&
+            parameters.radiusTop === parameters.radiusBottom) {
+          options.shape = 'Cylinder';
+          options.halfExtents.x = parameters.width * 0.5 * scale.x;
+          options.halfExtents.y = parameters.height * 0.5 * scale.y;
+          options.halfExtents.z = parameters.depth * 0.5 * scale.z;
+          options.radius = parameters.radiusTop * scale[options.axis];
+          return;
         }
       }
     }
 
-    options.halfExtents.x *= scale.x;
-    options.halfExtents.y *= scale.y;
-    options.halfExtents.z *= scale.z;
+    if (options.shape !== 'TriMesh' && options.shape !== 'ConvexHull') {
+      //
+      // If no known shape could be found, compute options via a
+      // more expensive approach using the vertices.
+      //
+      options.offset = computeOffset(object);
 
-    options.radius *= scale[options.axis];
-  };
+      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
+      const vertices = verticesAndIndexes.vertices;
+
+      const bounds = _computeBounds(vertices);
+      const halfExtents = _computeHalfExtents(
+        bounds,
+        options.minHalfExtent,
+        options.maxHalfExtent
+      );
+
+      options.halfExtents.x = halfExtents.x;
+      options.halfExtents.y = halfExtents.y;
+      options.halfExtents.z = halfExtents.z;
+
+      options.heightFieldScale.x = halfExtents.x * 2;
+      options.heightFieldScale.y = halfExtents.y * 2;
+      options.heightFieldScale.z = halfExtents.z * 2;
+
+      options.radius = _computeRadius(vertices, bounds);
+    }
+  }
 
   const _getHeightData = (function () {
     const canvas = document.createElement( 'canvas' );
@@ -351,22 +371,6 @@ async function RapierPhysics(options) {
   })();
 
   function createCuboidShape(object, options) {
-    if (options.fit) {
-      options.offset = computeOffset(object);
-
-      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
-      const vertices = verticesAndIndexes.vertices;
-
-      const halfExtents = _computeHalfExtents(
-        _computeBounds(vertices),
-        options.minHalfExtent,
-        options.maxHalfExtent
-      );
-      options.halfExtents.x = halfExtents.x;
-      options.halfExtents.y = halfExtents.y;
-      options.halfExtents.z = halfExtents.z;
-    }
-
     const sx = options.halfExtents.x;
     const sy = options.halfExtents.y;
     const sz = options.halfExtents.z;
@@ -375,25 +379,6 @@ async function RapierPhysics(options) {
   }
 
   function createCylinderShape(object, options) {
-    if (options.fit) {
-      options.offset = computeOffset(object);
-
-      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
-      const vertices = verticesAndIndexes.vertices;
-
-      const bounds = _computeBounds(vertices);
-      const halfExtents = _computeHalfExtents(
-        bounds,
-        options.minHalfExtent,
-        options.maxHalfExtent
-      );
-      options.halfExtents.x = halfExtents.x;
-      options.halfExtents.y = halfExtents.y;
-      options.halfExtents.z = halfExtents.z;
-
-      options.radius = _computeRadius(vertices, bounds);
-    }
-
     switch (options.axis) {
     case 'y':
       return RAPIER.ColliderDesc.cylinder( options.halfExtents.y, options.radius );
@@ -407,25 +392,6 @@ async function RapierPhysics(options) {
   }
 
   function createCapsuleShape(object, options) {
-    if (options.fit) {
-      options.offset = computeOffset(object);
-
-      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
-      const vertices = verticesAndIndexes.vertices;
-
-      const bounds = _computeBounds(vertices);
-      const halfExtents = _computeHalfExtents(
-        bounds,
-        options.minHalfExtent,
-        options.maxHalfExtent
-      );
-      options.halfExtents.x = halfExtents.x;
-      options.halfExtents.y = halfExtents.y;
-      options.halfExtents.z = halfExtents.z;
-
-      options.radius = _computeRadius(vertices, bounds);
-    }
-
     switch (options.axis) {
     case 'y':
       return RAPIER.ColliderDesc.capsule( options.halfExtents.y, options.radius );
@@ -439,25 +405,6 @@ async function RapierPhysics(options) {
   }
 
   function createConeShape(object, options) {
-    if (options.fit) {
-      options.offset = computeOffset(object);
-
-      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
-      const vertices = verticesAndIndexes.vertices;
-
-      const bounds = _computeBounds(vertices);
-      const halfExtents = _computeHalfExtents(
-        bounds,
-        options.minHalfExtent,
-        options.maxHalfExtent
-      );
-      options.halfExtents.x = halfExtents.x;
-      options.halfExtents.y = halfExtents.y;
-      options.halfExtents.z = halfExtents.z;
-
-      options.radius = _computeRadius(vertices, bounds);
-    }
-
     switch (options.axis) {
     case 'y':
       return RAPIER.ColliderDesc.cone( options.halfExtents.y, options.radius );
@@ -471,16 +418,6 @@ async function RapierPhysics(options) {
   }
 
   function createBallShape(object, options) {
-    if (options.fit) {
-      options.offset = computeOffset(object);
-
-      const verticesAndIndexes = _getVerticesAndIndexes(object, options);
-      const vertices = verticesAndIndexes.vertices;
-
-      const bounds = _computeBounds(vertices);
-      options.radius = _computeRadius(vertices, bounds);
-    }
-
     return RAPIER.ColliderDesc.ball( options.radius );
   }
 
