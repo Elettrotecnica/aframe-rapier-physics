@@ -190,34 +190,14 @@ async function RapierPhysics(options) {
         options.halfExtents.z = parameters.depth * 0.5;
       }
 
-      if (scale.x === scale.y && scale.y === scale.z) {
-        //
-        // We only support non-deforming scale with these shapes.
-        //
-        options.fit = false;
+      options.fit = false;
 
-        switch (geometry.type) {
-        case 'BoxGeometry':
-          options.shape = 'Cuboid';
-          break;
-        case 'SphereGeometry':
-          options.radius = parameters.radius;
-          options.shape = 'Ball';
-          break;
-        case 'CylinderGeometry':
-          if (parameters.radiusTop ===
-              parameters.radiusBottom) {
-            options.radius = parameters.radiusTop;
-            options.shape = 'Cylinder';
-          }
-          break;
-        default:
-          options.fit = true;
-        }
-      }
+      if (geometry.type === 'BoxGeometry') {
 
-      if (options.fit &&
-          geometry.type === 'PlaneGeometry') {
+        options.shape = 'Cuboid';
+
+      } else if (geometry.type === 'PlaneGeometry') {
+
         if (options.heights.length > 0 || material.displacementMap?.image) {
           options.shape = 'Heightfield';
 
@@ -252,8 +232,27 @@ async function RapierPhysics(options) {
           options.shape = 'Cuboid';
           options.halfExtents.z = 0;
         }
+
+      } else if (scale.x === scale.y && scale.y === scale.z) {
+        //
+        // We only support non-deforming scale with these shapes.
+        //
+        switch (geometry.type) {
+        case 'SphereGeometry':
+          options.radius = parameters.radius;
+          options.shape = 'Ball';
+          break;
+        case 'CylinderGeometry':
+          if (parameters.radiusTop ===
+              parameters.radiusBottom) {
+            options.radius = parameters.radiusTop;
+            options.shape = 'Cylinder';
+          }
+          break;
+        default:
+          options.fit = true;
+        }
       }
-      options.fit = false;
     }
 
     options.halfExtents.x *= scale.x;
