@@ -7,13 +7,13 @@
 - [Considerations](#considerations-before-use)
 - [Installation](#installation)
 - [Basics](#basics)
+- [System](#rapier-physics)
 - [Components](#components)
   - [`rapier-body`](#rapier-body)
   - [`rapier-shape`](#rapier-shape)
   - [`rapier-constraint`](#rapier-constraint)
 - [Using the Rapier API](#using-the-rapier-api)
 - [Events](#events)
-- [System Configuration](#system-configuration)
 
 ## Considerations Before Use
 
@@ -158,7 +158,7 @@ Example:
 
 | Property    | Dependencies                           | Default | Description                                                                               |
 | ----------- | -------------------------------------- | ------- | ----------------------------------------------------------------------------------------- |
-| type        | —                                      | `fixed`  | Options: `fixed`, `generic`, `prismatic`, `revolute`, `rope`, `spring` |
+| type        | —                                      | `fixed`  | Options: `fixed`, `generic`, `prismatic`, `revolute`, `rope`, `spring`. See [Joints](https://rapier.rs/docs/user_guides/javascript/joints) |
 | target      | —                                      | —       | Selector for a single entity to which current entity should be bound.                     |
 | anchor1     | — | `null` | Point where the joint is attached on the first rigid-body affected by this joint. Expressed in the local-space of the rigid-body. |
 | anchor2     | — | `null` | Point where the joint is attached on the second rigid-body affected by this joint. Expressed in the local-space of the rigid-body. |
@@ -189,14 +189,6 @@ The collision event detail will contain the following information:
 | contactPoint | The vec3 contact point on our entity |
 | targetContactPoint | The vec3 contact point on the touched entity |
 | impulse | Impulse at contact |
-
-## System Configuration
-
-| Property      | Default   | Description                                                  |
-| ------------- | --------- | ------------------------------------------------------------ |
-| debug         | `true`    | Whether to show wireframes for debugging.                    |
-| gravity       | `0 -9.81 0`    | Force of gravity (in m/s^2).                                 |
-| stats         |           | Where to output performance stats (if any), `panel`, `console`, `events` (or some combination). <br />- `panel` output stats to a panel similar to the A-Frame stats panel.<br />-`events` generates `physics-tick-timer` events, which can be processed externally.<br/> -`console`outputs stats to the console. |
 
 ## Statistics
 
