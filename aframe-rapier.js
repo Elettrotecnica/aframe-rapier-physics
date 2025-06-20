@@ -215,33 +215,36 @@ async function RapierPhysics(options) {
 
       if (options.fit &&
           geometry.type === 'PlaneGeometry') {
-        if (material.displacementMap?.image) {
+        if (options.heights.length > 0 || material.displacementMap?.image) {
           options.shape = 'Heightfield';
 
-          //
-          // With THREE, the minumum number of segments is one. With
-          // Rapier, it is 2.
-          //
-          options.widthSegments = parameters.widthSegments + 1;
-          options.heightSegments = parameters.widthSegments + 1;
-
-          if (material.displacementBias !== undefined) {
-            options.offset.z += material.displacementBias * scale.z;
-          }
-
           options.heightFieldScale.x = scale.x * parameters.width;
+          options.heightFieldScale.y = scale.y;
           options.heightFieldScale.z = scale.z * parameters.height;
 
-          if (material.displacementScale !== undefined) {
-            options.heightFieldScale.y = scale.y * material.displacementScale;
-          }
+          if (options.heights.length === 0) {
+            //
+            // With THREE, the minumum number of segments is one. With
+            // Rapier, it is 2.
+            //
+            options.widthSegments = parameters.widthSegments + 1;
+            options.heightSegments = parameters.widthSegments + 1;
 
-          _getHeightData(
-            material.displacementMap.image,
-            options.widthSegments,
-            options.heightSegments,
-            options.heights
-          );
+            if (material.displacementBias !== undefined) {
+              options.offset.z += material.displacementBias * scale.z;
+            }
+
+            if (material.displacementScale !== undefined) {
+              options.heightFieldScale.y *= material.displacementScale;
+            }
+
+            _getHeightData(
+              material.displacementMap.image,
+              options.widthSegments,
+              options.heightSegments,
+              options.heights
+            );
+          }
         } else {
           options.shape = 'Cuboid';
           options.halfExtents.z = 0;
