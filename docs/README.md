@@ -65,7 +65,7 @@ shapes/bodies.
 </a-scene>
 ```
 
-To create a physics body, both an `rapier-body` and at least one
+To create a physics body, both a `rapier-body` and at least one
 `rapier-shape` component should be added to an entity.
 
 ```html
@@ -94,9 +94,9 @@ scene. A couple of options can be set to customize your simulation:
 
 ### `rapier-body`
 
-An `rapier-body` component may be added to any entity in a
-scene. While having only an `rapier-body` will technically give you a
-valid physics body in the scene, only after adding an `rapier-shape`
+A `rapier-body` component may be added to any entity in a
+scene. While having only a `rapier-body` will technically give you a
+valid physics body in the scene, only after adding a `rapier-shape`
 will your entity begin to collide with other objects.
 
 | Property   | Default   | Description                                                  |
@@ -109,7 +109,7 @@ will your entity begin to collide with other objects.
 
 ### `rapier-shape`
 
-Any entity with an `rapier-body` component can also have 1 or more
+Any entity with a `rapier-body` component can also have 1 or more
 `rapier-shape` components. The `rapier-shape` component is what
 defines the collision shape of the entity. `rapier-shape` components
 can be added and removed at any time. By default an appropriate
