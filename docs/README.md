@@ -192,25 +192,24 @@ The collision event detail will contain the following information:
 
 ## Statistics
 
+When enabled, the system will collect a few statistics about its
+internals, which may be helpful in providing an estimate of the
+complexity and performance of your physics scene.
+
 The following statistics are available.  Each of these is refreshed
 every 100 ticks (i.e. every 100 frames).
-
-Some statistics follow the nomenclature from aframe-physics-system
-they were lifted from and do not map 100% to Rapier concepts - but
-they may nevertheless be helpful in providing an approximate estimate
-of the complexity involved in a given physics scene.
 
 | Statistic  | Meaning                                                      |
 | ---------- | ------------------------------------------------------------ |
 | Static     | The number of static bodies being handled by the physics engine. |
 | Dynamic    | The number of dynamic bodies being handled by the physics engine. |
-| Kinematic  | The number of kinematic bodies being handled by the physics engine. |
-| Manifolds  | A manifold represents a pair of bodies that are close to each other, but might have zero one or more actual contacts. |
-| Contacts   | The number of actual contacts between pairs of bodies.  There may be zero, one or multiple contacts per manifold (up to four - the physics engine discards any more than this, while always preserving the deepest contact point). |
-| Collisions | The number of current collisions between pairs of bodies.  This means that the two bodies are in contact with each other (one or more contacts).<br />One would expect this number too be lower than the number of Manifolds, but that doesn't seem to consistently be the case.  This may indicate a bug, or may just indicate that we need to better understand & explain the exact meanings of these statistics. |
-| Coll Keys  | An alternative measure of the number of current collisions between pairs of bodies, based on a distinct internal storage mechanism.<br />This seems to be consistently lower than Collisions, which may indicate a bug, or may just indicate that we need to better understand & explain the exact meanings of these statistics. |
+| Kinematic(v) | The number of velocity-based kinematic bodies being handled by the physics engine. |
+| Kinematic(p) | The number of position-based kinematic bodies being handled by the physics engine. |
+| Colliders  | The total number of colliders in the simulation, which may be greater than the number of total bodies. |
+| Manifolds  | A manifold represents a pair of bodies that are close to each other, but might have zero one or more actual contacts. We count all such potential contact pairs for every collider in the simulation. |
+| Collisions | The number of current collisions between pairs of colliders. This means that the two colliders are in contact with each other. This is increased whenever a contact event is starting and decreased when this stops according to the physics engine. |
 | Before     | The number of milliseconds per tick before invoking the physics engine.  Typically this is the time taken to synchronize the scene state into the physics engine, e.g. movements of kinematic bodies, or changes to physics shapes.<br />Median = median value in the last 100 ticks<br />90th % = 90th percentile value in the last 100 ticks<br />99th % = maximum recorded value over the last 100 ticks. |
-| After      | The number of milliseconds per tick after invoking the physics engine.  Typically this is the time taken to synchronize the physics engine state into the scene, e.g. movements of dynamic bodies.<br />Reported as Median / 90th / 99th percentiles, as above. |
+| After      | The number of milliseconds per tick after invoking the physics engine.  Typically this is the time taken to synchronize the physics engine state into the scene, e.g. movements of dynamic bodies. This includes emitting and handling of collision events. <br />Reported as Median / 90th / 99th percentiles, as above. |
 | Engine     | The number of milliseconds per tick actually running the physics engine.<br />Reported as Median / 90th / 99th percentiles, as above. |
 | Total      | The total number of milliseconds of physics processing per tick: Before + Engine + After.  Reported as Median / 90th / 99th percentiles, as above. |
 

@@ -119,7 +119,6 @@ async function RapierPhysics(options) {
   const bodyToObjectMap = new WeakMap();
 
   let numCollisions = 0;
-  let numManifolds = 0;
 
   function _setOptions(object, options) {
     // fit = true: a single shape is automatically sized to bound all meshes within the entity.
@@ -920,7 +919,10 @@ async function RapierPhysics(options) {
     });
 
     world.timestep = timeDelta * 0.001;
+
+    this.stepStartTime = performance.now();
     world.step(events);
+    this.stepEndTime = performance.now();
 
     //
     // Active non-kinematic bodies apply their body changes on the
@@ -1113,7 +1115,6 @@ window.AFRAME.registerSystem('rapier-physics', {
     this.statsToPanel = this.data.stats.includes("panel");
 
     this.numCollisions = 0;
-    this.numManifolds = 0;
 
     if (this.statsToConsole || this.statsToEvents || this.statsToPanel) {
       this.trackPerf = true;
@@ -1124,23 +1125,31 @@ window.AFRAME.registerSystem('rapier-physics', {
 
       this.bodyTypeToStatsPropertyMap = {
         [RAPIER.RigidBodyType.Fixed] : "staticBodies",
-        [RAPIER.RigidBodyType.KinematicVelocityBased] : "kinematicBodies",
-        [RAPIER.RigidBodyType.KinematicPositionBased] : "kinematicBodies",
+        [RAPIER.RigidBodyType.KinematicVelocityBased] : "kinematicVelocityBasedBodies",
+        [RAPIER.RigidBodyType.KinematicPositionBased] : "kinematicPositionBasedBodies",
         [RAPIER.RigidBodyType.Dynamic] : "dynamicBodies"
       };
 
+      const world = this.physics.world;
+
       this.countBodies = () => {
         const statsData = this.statsBodyData
-        statsData.manifolds = this.numManifolds;
+        statsData.manifolds = 0;
         statsData.collisions = this.numCollisions;
-        statsData.collisionKeys = this.physics.world.colliders.len();
+        statsData.colliders = this.physics.world.colliders.len();
         statsData.staticBodies = 0
-        statsData.kinematicBodies = 0
+        statsData.kinematicVelocityBasedBodies = 0
+        statsData.kinematicPositionBasedBodies = 0
         statsData.dynamicBodies = 0
 
-        this.physics.world.bodies.forEach((rigidBody) => {
+        world.bodies.forEach((rigidBody) => {
           const bodyType = this.bodyTypeToStatsPropertyMap[rigidBody.bodyType()];
           this.statsBodyData[bodyType]++;
+        });
+        world.colliders.forEach((collider) => {
+          world.narrowPhase.contactPairsWith(collider.handle, () => {
+            this.statsBodyData.manifolds++;
+          });
         });
       }
 
@@ -1168,20 +1177,24 @@ window.AFRAME.registerSystem('rapier-physics', {
                                            label: Dynamic`)
       scene.setAttribute("stats-row__b3", `group: bodies;
                                              event:physics-body-data;
-                                             properties: kinematicBodies;
-                                             label: Kinematic`)
+                                             properties: kinematicPositionBasedBodies;
+                                             label: Kinematic(p)`)
       scene.setAttribute("stats-row__b4", `group: bodies;
+                                             event:physics-body-data;
+                                             properties: kinematicVelocityBasedBodies;
+                                             label: Kinematic(v)`)
+      scene.setAttribute("stats-row__b5", `group: bodies;
+                                             event: physics-body-data;
+                                             properties: colliders;
+                                             label: Colliders`)
+      scene.setAttribute("stats-row__b6", `group: bodies;
                                              event: physics-body-data;
                                              properties: manifolds;
                                              label: Manifolds`)
-      scene.setAttribute("stats-row__b5", `group: bodies;
+      scene.setAttribute("stats-row__b7", `group: bodies;
                                              event: physics-body-data;
                                              properties: collisions;
                                              label: Collisions`)
-      scene.setAttribute("stats-row__b6", `group: bodies;
-                                             event: physics-body-data;
-                                             properties: collisionKeys;
-                                             label: Coll Keys`)
 
       scene.setAttribute("stats-group__tick", `label: Physics Ticks: Median${space}90th%${space}99th%`)
       scene.setAttribute("stats-row__1", `group: tick;
@@ -1213,11 +1226,7 @@ window.AFRAME.registerSystem('rapier-physics', {
   tick: function (time, timeDelta) {
     if (!this.physics) return;
 
-    // TODO: aframe-physics-system supported callbacks before/after
-    // the physics step... not sure we need this.
     const beforeStartTime = performance.now();
-
-    const engineStartTime = performance.now();
 
     this.physics.step(Math.min(timeDelta, this.data.maxTimeStep));
 
@@ -1225,7 +1234,6 @@ window.AFRAME.registerSystem('rapier-physics', {
     const events = this.physics.events;
 
     // Review events
-    this.numManifolds = 0;
     events.drainCollisionEvents((handle1, handle2, started) => {
 
       this.numCollisions+= started ? 1 : -1;
@@ -1235,8 +1243,6 @@ window.AFRAME.registerSystem('rapier-physics', {
       const object2 = this.physics.getObjectFromCollider(collider2);
       const eventName = started ? 'collidestart' : 'collideend';
       world.narrowPhase.contactPair(handle1, handle2, (manifold, flipped) => {
-        this.numManifolds++;
-
         const contactPoint1 = manifold.localContactPoint1();
         const contactPoint2 = manifold.localContactPoint2();
         const impulse = manifold.contactImpulse();
@@ -1258,11 +1264,10 @@ window.AFRAME.registerSystem('rapier-physics', {
       });
     });
 
-    const engineEndTime = performance.now();
-
     if (this.trackPerf) {
       const afterEndTime = performance.now();
-
+      const engineStartTime = this.physics.stepStartTime;
+      const engineEndTime = this.physics.stepEndTime;
       this.statsTickData.before = engineStartTime - beforeStartTime
       this.statsTickData.engine = engineEndTime - engineStartTime
       this.statsTickData.after = afterEndTime - engineEndTime
