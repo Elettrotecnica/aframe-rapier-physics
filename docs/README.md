@@ -120,7 +120,7 @@ specify one manually.
 | ------------------- | --------------------------------------------------------- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | shape               | —                                                         | `ConvexHull`                        | Options: `Cuboid`, `Cylinder`, `Capsule`, `Cone`, `Ball`, `ConvexHull`, `TriMesh` and `Heigtfield`. see [Shapes](https://rapier.rs/docs/user_guides/javascript/colliders/#shapes). |
 | fit                 | —                                                         | `true`                         | Flag deciding if we should compute the collision shape automatically |
-| halfExtents         | `fit: false` and any shape other than `ConvexHull` or `TriMesh` | `1 1 1`                     | Set the halfExtents to use.                        |
+| halfExtents         | `fit: false` and any shape other than `ConvexHull`, `TriMesh` or `Heightfield` | `0.5 0.5 0.5` | Set the halfExtents to use.                        |
 | offset              | —                                                               | `0 0 0`                     | Offset of this shape with respect to the entity    |
 | minHalfExtent       | `fit: true` and any shape other than `ConvexHull` or `TriMesh`  | `Number.NEGATIVE_INFINITY`  | The minimum value for any axis of the halfExtents. |
 | maxHalfExtent       | `fit: true` and any shape other than `ConvexHull` or `TriMesh`  | `Number.NEGATIVE_INFINITY`  | The maximum value for any axis of the halfExtents. |

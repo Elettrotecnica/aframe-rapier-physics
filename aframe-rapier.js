@@ -140,7 +140,7 @@ async function RapierPhysics(options) {
       options.includeInvisible : false;
 
     if (!options.hasOwnProperty('halfExtents')) {
-      options.halfExtents = { x: 1, y: 1, z: 1 };
+      options.halfExtents = { x: 0.5, y: 0.5, z: 0.5 };
     }
 
     if (isNaN(options.radius)) {
@@ -180,12 +180,15 @@ async function RapierPhysics(options) {
       const material = meshes[0].material;
       const parameters = geometry.parameters;
 
-      options.halfExtents.x = parameters?.width !== undefined ?
-        parameters.width / 2 : 0.5;
-      options.halfExtents.y = parameters?.height !== undefined ?
-        parameters.height / 2 : 0.5;
-      options.halfExtents.z = parameters?.depth !== undefined ?
-        parameters.depth / 2 : 0.5;
+      if (parameters?.width !== undefined) {
+        options.halfExtents.x = parameters.width * 0.5;
+      }
+      if (parameters?.height !== undefined) {
+        options.halfExtents.y = parameters.height * 0.5;
+      }
+      if (parameters?.depth !== undefined) {
+        options.halfExtents.z = parameters.depth * 0.5;
+      }
 
       if (scale.x === scale.y && scale.y === scale.z) {
         //
@@ -1368,7 +1371,7 @@ window.AFRAME.registerComponent('rapier-shape', {
       ]
     },
     offset: { type: 'vec3', default: { x: 0, y: 0, z: 0 } },
-    halfExtents: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
+    halfExtents: { type: 'vec3', default: { x: 0.5, y: 0.5, z: 0.5 } },
     minHalfExtent: { type: 'number', default: 0.05 },
     maxHalfExtent: { type: 'number', default: Number.POSITIVE_INFINITY },
     radius: { type: 'number', default: 0 },
