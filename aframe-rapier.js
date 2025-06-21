@@ -45,18 +45,17 @@ const getObjectsByProperty = (function () {
 
 /*
   This is useful when computing primitive collision shapes for models
-  that do not have the origin at the center.
+  that do not have the origin at the center of their bounding box.
  */
 const computeOffset = (function () {
   const b = new THREE.Box3();
   const v = new THREE.Vector3();
   return function (object) {
     object.updateMatrixWorld();
+    const p = getWorldPosition(object);
     b.setFromObject(object);
     b.getCenter(v);
-    object.worldToLocal(v);
-    v.divide(object.scale);
-    return v;
+    return p.sub(v).negate();
   };
 })();
 
