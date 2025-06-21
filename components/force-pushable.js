@@ -46,11 +46,9 @@
       // entities, ensure these are also been set.
       //
       this.children.length = 0;
-      for (const child of this.el.object3D.children) {
-        if (child.isGroup) {
-          this.el.setObject3D(child.id, child);
-          this.children.push(child);
-        }
+      this.children.push(...this.el.object3D.children);
+      for (const child of this.children) {
+        this.el.setObject3D(child.id, child);
       }
       this.el.addEventListener('click', this.forcePush);
     },
