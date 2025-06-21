@@ -510,8 +510,8 @@ async function RapierPhysics(options) {
             //
             // Apply model's internal transformations.
             //
-            vertex.multiply(scale);
             vertex.applyMatrix4(transform);
+            vertex.multiply(scale);
             vertices.push( vertex.x, vertex.y, vertex.z );
           }
 
