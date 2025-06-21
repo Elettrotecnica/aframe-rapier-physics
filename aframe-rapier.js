@@ -1337,6 +1337,8 @@ window.AFRAME.registerComponent('rapier-shape', {
     const scale = getWorldScale(this.el.object3D);
     this.oldScale = new THREE.Vector3();
     this.oldScale.copy(scale);
+
+    this.onObject3DSet = this.onObject3DSet.bind(this);
   },
   update: function () {
     Object.assign(this.options, this.data);
@@ -1348,6 +1350,19 @@ window.AFRAME.registerComponent('rapier-shape', {
       false
     );
   },
+  onObject3DSet(evt) {
+    if (evt.detail.type !== 'mesh') return;
+    if (this.collider) {
+      this.system.physics.updateCollider(
+        this.el.object3D,
+        this.collider,
+        this.options,
+        true
+      );
+    } else {
+      this.createCollider();
+    }
+  },
   createCollider() {
     if (this.collider) return;
 
@@ -1357,29 +1372,26 @@ window.AFRAME.registerComponent('rapier-shape', {
       }, {once: true});
       return;
     }
+
     //
     // Traversing the object to look for meshes addresses also the
     // case of an a-entity with children entities. The mesh would not
     // be on the entity itself.
     //
     const meshes = getObjectsByProperty(this.el.object3D, 'isMesh', true);
-    if (meshes.length === 0) {
-      this.el.addEventListener('object3dset', (evt) => {
-        if (evt.detail.type === 'mesh') {
-          this.createCollider();
-        }
-      }, {once: true});
-    } else {
-      this.collider = this.system.physics.createCollider(
-        this.el.object3D,
-        this.options
-      );
-    }
+    if (meshes.length === 0) return;
+
+    this.collider = this.system.physics.createCollider(
+      this.el.object3D,
+      this.options
+    );
   },
   play: function () {
+    this.el.addEventListener('object3dset', this.onObject3DSet);
     this.createCollider();
   },
   pause: function () {
+    this.el.removeEventListener('object3dset', this.onObject3DSet);
     if (!this.collider) return;
     this.system.physics.removeCollider(this.collider);
     this.collider = null;
