@@ -22,6 +22,10 @@
       view code
     </a>
     <a-scene environment rapier-physics="debug: true;">
+      <a-assets>
+        <a-asset id="lhand" src="https://cdn.aframe.io/controllers/hands/leftHandLow.glb"></a-asset>
+        <a-asset id="rhand" src="https://cdn.aframe.io/controllers/hands/rightHandLow.glb"></a-asset>
+      </a-assets>
       <!-- Player -->
       <a-entity camera look-controls wasd-controls position="0 1.6 0">
         <a-entity cursor
@@ -49,7 +53,7 @@
       <a-box width="75" height="0.1" depth="75" rapier-body="type: Fixed" rapier-shape visible="false"></a-box>
 
       <!-- A single sphere entity with two colliders -->
-      <a-sphere radius="0.25" position="-2 4 -2" color="red"
+      <a-sphere radius="0.25" position="-1 4 -2" color="red"
                 rapier-body
                 rapier-shape__main="shape: Cylinder;
                                     mass: 4;
@@ -66,13 +70,23 @@
       ></a-sphere>
 
       <!-- An entity with a single collider wrapping two entity children -->
-      <a-entity position="2 4 -2"
+      <a-entity position="0 4 -2"
         rapier-body
         rapier-shape="mass: 5"
         force-pushable="force: 40">
         <a-cylinder width="0.48" height="0.36" depth="0.48" radius="0.25" color="blue" position="0 0 0"></a-cylinder>
         <a-box width="0.30" height="0.36" depth="0.08" radius="0.25" color="blue" position="0.4 0 0"></a-box>
       </a-entity>
+
+      <!-- An entity with a single collider wrapping two gltf models -->
+      <a-entity position="1 4 -2" scale="3 3 3"
+        rapier-body
+        rapier-shape="mass: 5"
+        force-pushable="force: 40">
+        <a-gltf-model src="#lhand" scale="1 1 1" position="0 0 0"></a-gltf-model>
+        <a-gltf-model src="#rhand" scale="1 1 1" position="0.5 0 0"></a-gltf-model>
+      </a-entity>
+
     </a-scene>
   </body>
 </html>
