@@ -1355,7 +1355,15 @@ window.AFRAME.registerComponent('rapier-shape', {
       this.el.addEventListener('body-loaded', () => {
         this.createCollider();
       }, {once: true});
-    } else if (!this.el.object3DMap.mesh) {
+      return;
+    }
+    //
+    // Traversing the object to look for meshes addresses also the
+    // case of an a-entity with children entities. The mesh would not
+    // be on the entity itself.
+    //
+    const meshes = getObjectsByProperty(this.el.object3D, 'isMesh', true);
+    if (meshes.length === 0) {
       this.el.addEventListener('object3dset', (evt) => {
         if (evt.detail.type === 'mesh') {
           this.createCollider();

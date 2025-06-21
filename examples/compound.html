@@ -48,8 +48,8 @@
       <!-- Terrain -->
       <a-box width="75" height="0.1" depth="75" rapier-body="type: Fixed" rapier-shape visible="false"></a-box>
 
-      <!-- Blocks -->
-      <a-sphere radius="0.25" position="0 4 -2" color="red"
+      <!-- A single sphere entity with two colliders -->
+      <a-sphere radius="0.25" position="-2 4 -2" color="red"
                 rapier-body
                 rapier-shape__main="shape: Cylinder;
                                     mass: 4;
@@ -64,6 +64,15 @@
                                       offset: 0.4 0 0;"
                 force-pushable="force: 40"
       ></a-sphere>
+
+      <!-- An entity with a single collider wrapping two entity children -->
+      <a-entity position="2 4 -2"
+        rapier-body
+        rapier-shape="mass: 5"
+        force-pushable="force: 40">
+        <a-cylinder width="0.48" height="0.36" depth="0.48" radius="0.25" color="blue" position="0 0 0"></a-cylinder>
+        <a-box width="0.30" height="0.36" depth="0.08" radius="0.25" color="blue" position="0.4 0 0"></a-box>
+      </a-entity>
     </a-scene>
   </body>
 </html>

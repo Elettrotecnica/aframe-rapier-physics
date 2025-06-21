@@ -18,6 +18,7 @@
     init: function () {
       this.forcePush = this.forcePush.bind(this);
       this.bodyComponent = this.el.components['rapier-body'];
+      this.children = [];
     },
     forcePush: function (e) {
       const body = this.bodyComponent.body;
@@ -39,9 +40,25 @@
       body.applyImpulseAtPoint(force, target, true);
     },
     play: function() {
+      //
+      // Click event from the cursor component will fire only on items
+      // added by setObject3D. If this is an entity with children
+      // entities, ensure these are also been set.
+      //
+      this.children.length = 0;
+      for (const child of this.el.object3D.children) {
+        if (child.isGroup) {
+          this.el.setObject3D(child.id, child);
+          this.children.push(child);
+        }
+      }
       this.el.addEventListener('click', this.forcePush);
     },
     pause: function() {
+      for (const child of this.children) {
+        this.el.removeObject3D(child.id);
+      }
+      this.children.length = 0;
       this.el.removeEventListener('click', this.forcePush);
     }
   });
