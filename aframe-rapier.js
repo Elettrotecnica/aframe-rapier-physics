@@ -125,7 +125,7 @@ async function RapierPhysics(options) {
     options.fit = options.hasOwnProperty('fit') ?
       options.fit : true;
 
-    options.shape = options.shape || 'convexHull';
+    options.shape = options.shape || 'ConvexHull';
 
     options.minHalfExtent = options.hasOwnProperty('minHalfExtent') ?
       options.minHalfExtent : 0;
