@@ -11,7 +11,7 @@
  * @class
  * @hideconstructor
  */
-const RAPIER_PATH = 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.18.0/rapier.es.min.js';
+const RAPIER_PATH = 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.18.2/rapier_wasm3d.min.js';
 
 const getWorldPosition = (function () {
   const position = new THREE.Vector3();
