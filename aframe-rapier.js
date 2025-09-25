@@ -530,7 +530,7 @@ async function RapierPhysics(options) {
     };
   })();
 
-  function getShape( object, options ) {
+  function createShape( object, options ) {
     _setOptions(object, options);
 
     switch (options.shape) {
@@ -606,7 +606,7 @@ async function RapierPhysics(options) {
       throw 'No body defined on this object.'
     }
 
-    const shape = getShape( object, options );
+    const shape = createShape( object, options );
 
     if ( shape === null ) {
       throw 'Cannot compute shape.'
@@ -666,7 +666,7 @@ async function RapierPhysics(options) {
     let shape = collider.shape;
 
     if (rebuild || shape.type !== RAPIER.ShapeType[options.shape]) {
-      shape = getShape(object, options).shape;
+      shape = createShape(object, options).shape;
       collider.setShape(shape);
     }
 
@@ -925,6 +925,16 @@ async function RapierPhysics(options) {
      * @param {Object} object The object to create.
      */
     createBody: createBody,
+
+    /**
+     * Creates a shape based on the given object and options.
+     *
+     * @method
+     * @name RapierPhysics#createShape
+     * @param {Object} object The object for which we create the shape.
+     * @param {Object} options Ths shape options.
+     */
+    createShape: createShape,
 
     /**
      * Updates the given object in the physics simulation.
@@ -1340,24 +1350,18 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.onObject3DSet = this.onObject3DSet.bind(this);
   },
   update: function () {
-    Object.assign(this.options, this.data);
     if (!this.collider) return;
+    Object.assign(this.options, this.data);
     this.system.physics.updateCollider(
       this.el.object3D,
       this.collider,
-      this.options,
-      false
+      this.options
     );
   },
   onObject3DSet(evt) {
     if (evt.detail.type !== 'mesh') return;
     if (this.collider) {
-      this.system.physics.updateCollider(
-        this.el.object3D,
-        this.collider,
-        this.options,
-        true
-      );
+      this.updateShape();
     } else {
       this.createCollider();
     }
@@ -1395,6 +1399,15 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.system.physics.removeCollider(this.collider);
     this.collider = null;
   },
+  updateShape () {
+    if (!this.collider) return;
+    Object.assign(this.options, this.data);
+    const shape = this.system.physics.createShape(
+      this.el.object3D,
+      this.options
+    ).shape;
+    this.collider.setShape(shape);
+  },
   scaleHasChanged () {
     const scale = getWorldScale(this.el.object3D);
     const distance = scale.distanceToSquared(this.oldScale);
@@ -1403,16 +1416,10 @@ window.AFRAME.registerComponent('rapier-shape', {
     return scaleChanged;
   },
   tick: function () {
-    if (this.collider && this.data.scaleAutoUpdate) {
-      if (this.scaleHasChanged()) {
-        Object.assign(this.options, this.data);
-        this.system.physics.updateCollider(
-          this.el.object3D,
-          this.collider,
-          this.options,
-          true
-        );
-      }
+    if (this.collider &&
+        this.data.scaleAutoUpdate &&
+        this.scaleHasChanged()) {
+      this.updateShape();
     }
   }
 });
