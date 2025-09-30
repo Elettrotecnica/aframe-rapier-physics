@@ -1350,8 +1350,8 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.onObject3DSet = this.onObject3DSet.bind(this);
   },
   update: function () {
-    if (!this.collider) return;
     Object.assign(this.options, this.data);
+    if (!this.collider) return;
     this.system.physics.updateCollider(
       this.el.object3D,
       this.collider,
