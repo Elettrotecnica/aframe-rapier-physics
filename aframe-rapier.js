@@ -1361,7 +1361,12 @@ window.AFRAME.registerComponent('rapier-shape', {
   onObject3DSet(evt) {
     if (evt.detail.type !== 'mesh') return;
     if (this.collider) {
-      this.updateShape();
+      this.system.physics.updateCollider(
+        this.el.object3D,
+        this.collider,
+        this.options,
+        true
+      );
     } else {
       this.createCollider();
     }
