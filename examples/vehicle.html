@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Examples • RAPIER</title>
+    <meta name="description" content="Hello, WebVR! - A-Frame" />
+    <script src="https://aframe.io/releases/1.7.1/aframe.min.js"></script>
+    <script type="module" src="../aframe-rapier.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+      AFRAME.registerComponent("car", {
+	  dependencies: ['rapier-body'],
+          init: function () {
+	      this.startPosition = this.el.object3D.position.clone();
+	      this.startRotation = this.el.object3D.quaternion.clone();
+	      this.zeroVector = new THREE.Vector3( 0, 0, 0 );
+
+              this.initControls();
+	      this.initVehicle();
+	  },
+	  initVehicle() {
+	      if (this.ready) { return; };
+
+	      this.chassis = this.el.components['rapier-body'].body;
+	      if (!this.chassis) {
+		  this.el.addEventListener('body-loaded', () => {
+		      this.initVehicle();
+		  }, {once: true});
+		  return;
+	      }
+
+	      this.system = this.el.sceneEl.systems['rapier-physics'];
+
+              // create vehicle controller
+              this.vehicleController = this.
+		  system.physics.world.createVehicleController(this.chassis);
+
+              this.wheels = []; // wheel array, used later in the update
+
+              this.addWheel(0, { x: - 1, y: -0.1, z: - 1.5 }, this.el.object3D);
+              this.addWheel(1, { x: 1, y:-0.1, z: - 1.5 }, this.el.object3D);
+              this.addWheel(2, { x: - 1, y: -0.1, z: 1.5 }, this.el.object3D);
+              this.addWheel(3, { x: 1, y: -0.1, z: 1.5 }, this.el.object3D);
+
+              this.vehicleController.setWheelSteering(0, 0); // car going straight
+              this.vehicleController.setWheelSteering(1, 0); // car going straight
+
+              this.ready = true;
+          },
+          tick: function () {
+              if (!this.ready) return;
+              this.updateCarControl()
+              this.vehicleController.updateVehicle(
+		  this.system.physics.world.timestep
+	      );
+              this.updateWheels();
+          },
+          addWheel: (function () {
+              // Define wheel properties
+              const wheelRadius = 0.3;
+              const wheelWidth = 0.4;
+	      // Create a wheel geometry and material
+              const geometry = new THREE.CylinderGeometry(
+		  wheelRadius,
+		  wheelRadius,
+		  wheelWidth,
+		  16
+	      );
+              geometry.rotateZ(Math.PI * 0.5);
+              const material = new THREE.MeshStandardMaterial({
+		  color: 0x000000
+	      });
+	      // Downward direction
+	      const wheelDirection = { x: 0.0, y: - 1.0, z: 0.0 };
+	      // Axle direction
+	      const wheelAxle = { x: - 1.0, y: 0.0, z: 0.0 };
+	      return function (index, pos, carMesh) {
+		  const suspensionRestLength = 0.8;
+		  // Position relative to chassis
+		  const wheelPosition = pos;
+
+		  // Add the wheel to the vehicle controller
+		  this.vehicleController.addWheel(
+                      wheelPosition,
+                      wheelDirection,
+                      wheelAxle,
+                      suspensionRestLength,
+                      wheelRadius
+		  );
+
+		  // Set suspension stiffness for wheel
+		  this.vehicleController.setWheelSuspensionStiffness(index, 24.0);
+
+		  // Set wheel friction
+		  this.vehicleController.setWheelFrictionSlip(index, 1000.0);
+
+		  // Enable steering for the wheel
+		  this.vehicleController.setWheelSteering(index, pos.z < 0);
+
+		  const wheel = new THREE.Mesh(geometry, material);
+		  wheel.castShadow = true;
+		  wheel.position.copy(pos);
+
+		  this.wheels.push(wheel);
+		  carMesh.add(wheel);
+              };
+	  })(),
+          updateWheels: (function () {
+	      const wheelSteeringQuat = new THREE.Quaternion();
+	      const wheelRotationQuat = new THREE.Quaternion();
+	      const up = new THREE.Vector3( 0, 1, 0 );
+	      return function () {
+		  if ( !this.vehicleController ) return;
+		  this.wheels.forEach( ( wheel, index ) => {
+		      const wheelAxleCs = this.vehicleController.wheelAxleCs( index );
+		      const connection = this.vehicleController.wheelChassisConnectionPointCs( index ).y || 0;
+		      const suspension = this.vehicleController.wheelSuspensionLength( index ) || 0;
+		      const steering = this.vehicleController.wheelSteering( index ) || 0;
+		      const rotationRad = this.vehicleController.wheelRotation( index ) || 0;
+
+		      wheel.position.y = connection - suspension;
+
+		      wheelSteeringQuat.setFromAxisAngle( up, steering );
+		      wheelRotationQuat.setFromAxisAngle( wheelAxleCs, rotationRad );
+
+		      wheel.quaternion.multiplyQuaternions( wheelSteeringQuat, wheelRotationQuat );		      
+		  });
+	      };
+	  })(),
+          initControls () {
+              // Movement input
+	      this.movement = {
+		  forward: 0,
+		  right: 0,
+		  brake: 0,
+		  reset: false,
+		  accelerateForce: { value: 0, min: - 3, max: 3, step: 0.05 },
+		  brakeForce: { value: 0, min: 0, max: 1, step: 0.05 }
+	      };
+
+	      window.addEventListener( 'keydown', ( event ) => {
+
+		  //console.log( event.key );
+		  if ( event.key === 'i' ) this.movement.forward = - 1;
+		  if ( event.key === 'k' ) this.movement.forward = 1;
+		  if ( event.key === 'j' ) this.movement.right = 1;
+		  if ( event.key === 'l' ) this.movement.right = - 1;
+		  if ( event.key === 'r' ) this.movement.reset = true;
+		  if ( event.key === ' ' ) this.movement.brake = 1;
+		  
+	      } );
+
+	      window.addEventListener( 'keyup', ( event ) => {
+
+		  if ( event.key === 'i' || event.key === 'k' ) this.movement.forward = 0;
+		  if ( event.key === 'j' || event.key === 'l' ) this.movement.right = 0;
+		  if ( event.key === 'r' ) this.movement.reset = false;
+		  if ( event.key === ' ' ) this.movement.brake = 0;
+		  
+	      } );
+          },
+          updateCarControl() {
+
+	      if ( this.movement.reset ) {
+
+		  this.chassis.setTranslation(this.startPosition, true);
+		  this.chassis.setRotation(this.startRotation, true );
+		  this.chassis.setLinvel(this.zeroVector, true );
+		  this.chassis.setAngvel(this.zeroVector, true );
+
+		  this.movement.accelerateForce.value = 0;
+		  this.movement.brakeForce.value = 0;
+
+		  return;
+
+	      }
+
+	      let accelerateForce = 0;
+
+	      if ( this.movement.forward < 0 ) {
+
+		  accelerateForce = this.movement.accelerateForce.value - this.movement.accelerateForce.step;
+		  if ( accelerateForce < this.movement.accelerateForce.min ) accelerateForce = this.movement.accelerateForce.min;
+		  
+	      } else if ( this.movement.forward > 0 ) {
+
+		  accelerateForce = this.movement.accelerateForce.value + this.movement.accelerateForce.step;
+		  
+		  if ( accelerateForce > this.movement.accelerateForce.max ) accelerateForce = this.movement.accelerateForce.max;
+		  
+	      } else {
+
+		  if ( this.chassis.isSleeping() ) this.chassis.wakeUp();
+
+	      }
+
+	      this.movement.accelerateForce.value = accelerateForce;
+
+	      let brakeForce = 0;
+
+	      if ( this.movement.brake > 0 ) {
+		  
+		  brakeForce = this.movement.brakeForce.value + this.movement.brakeForce.step;
+		  if ( brakeForce > this.movement.brakeForce.max ) brakeForce = this.movement.brakeForce.max;
+
+	      }
+
+	      this.movement.brakeForce.value = brakeForce;
+
+	      const engineForce = accelerateForce;
+
+	      this.vehicleController.setWheelEngineForce( 0, engineForce );
+	      this.vehicleController.setWheelEngineForce( 1, engineForce );
+
+	      const currentSteering = this.vehicleController.wheelSteering( 0 );
+	      const steerDirection = this.movement.right;
+	      const steerAngle = Math.PI / 4;
+
+	      const steering = THREE.MathUtils.lerp( currentSteering, steerAngle * steerDirection, 0.25 );
+
+	      this.vehicleController.setWheelSteering( 0, steering );
+	      this.vehicleController.setWheelSteering( 1, steering );
+
+	      const wheelBrake = this.movement.brake * brakeForce;
+	      this.vehicleController.setWheelBrake( 0, wheelBrake );
+	      this.vehicleController.setWheelBrake( 1, wheelBrake );
+	      this.vehicleController.setWheelBrake( 2, wheelBrake );
+	      this.vehicleController.setWheelBrake( 3, wheelBrake );
+	  }
+      });
+    </script>
+  </head>
+  <body>
+    <div class="text-overlay">
+      <p>Demo of Rapier Vehicle Controller</p>
+      <p>Accessing directly the Rapier API to simulate a raycast vehicle</p>
+      <p>Use i (forward), j (left), k (backward), l (right), r (reset) and the spacebar (brake) to control the vehicle.</p>
+    </div>
+    <a class="code-link" target="_blank"
+       href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/vehicle.html">
+      view code
+    </a>
+    <a-scene rapier-physics="debug: true;">
+      <a-camera position="7 1.6 19" id="maincamera" near="0.001"></a-camera>
+
+      <a-entity light="intensity: 1; type: ambient" id="ambilight"></a-entity>
+      <a-entity id="dirlight" light="intensity: 2.274; castShadow: true; shadowCameraTop: 50; shadowCameraRight: 50; shadowCameraBottom: -50; shadowCameraLeft: -50; shadowCameraVisible: false" position="-0.5 5.67143 1"></a-entity>
+
+      <a-box id="myplane" position="0 0 0" rotation="0 0 0" width="50" height="1" depth="50" color="#3d9e3d" shadow
+             rapier-body="type: Fixed;" rapier-shape="shape: Cuboid;"></a-box>
+      <a-box id="wall001" position="0 1.5 -25.5" width="50" height="2" depth="1" color="#3d9e3d" shadow="" rapier-body="type: Fixed" rapier-shape="shape: Cuboid;"></a-box>
+      <a-box id="wall002" position="0 1.5 25.5" width="50" height="2" depth="1" color="#3d9e3d" shadow="" rapier-body="type: Fixed" rapier-shape="shape: Cuboid;"></a-box>
+      <a-box id="wall003" position="-25.5 1.5 0" width="1" height="2" depth="50" color="#3d9e3d" shadow="" rapier-body="type: Fixed" rapier-shape="shape: Cuboid;"></a-box>
+      <a-box id="wall004" position="25.5 1.5 0" width="1" height="2" depth="50" color="#3d9e3d" shadow="" rapier-body="type: Fixed" rapier-shape="shape: Cuboid;"></a-box>
+      <a-entity shadow id="ramp" material="color:#3d9e3d" position="0 0.38442 -7.86646" geometry="depth: 17.71; width: 4.81" rotation="15 0 0" rapier-body="type: Fixed;" rapier-shape="shape: Cuboid;"></a-entity>
+
+      <a-box position="0 5 15" width="2" height="2" depth="2" rotation="0 45 0" color="#4CC3D9" shadow rapier-body
+             rapier-shape="shape: Cuboid;"></a-box>
+
+      <a-sphere position="0 5 11" material="color:#FFFFFF" shadow rapier-body rapier-shape="shape:Sphere"></a-sphere>    
+
+      <a-box
+	shadow id="mycar"
+	color="#FF0000"
+	width="2"
+	height="1"
+	depth="4"
+	rapier-body
+	rapier-shape="fit: false; halfExtents: 1, 0.5, 2; shape: Cuboid; mass: 3"
+	car 
+	position="0 2 0">  
+      </a-box>
+
+      <a-sky color="#dbdbff"></a-sky>
+    </a-scene>
+  </body>
+</html>

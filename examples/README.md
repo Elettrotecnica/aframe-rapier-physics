@@ -4,7 +4,7 @@ To help demonstrate the features and capabilities of the physics system.
 the following collection of examples have been prepared.
 
 
-| Example                                                      | Cannon                                 |
+| Example                                                      | Link                                 |
 | ------------------------------------------------------------ | -------------------------------------- |
 | Demonstration of many features in a single example.          | [**OK**](sandbox.html)     |
 | Construct a compound shape and simulate collision with a ground plane. | [**OK**](compound.html)     |
@@ -18,4 +18,5 @@ the following collection of examples have been prepared.
 | A simplified version of [aframe-xr-boilerplate](https://github.com/AdaRoseCannon/aframe-xr-boilerplate) to demonstrate the use of a Fixed TriMesh from a complex model. | [**OK**](aframe-xr-boilerplate/) |
 | A Heightfield fixed collision shape computed automatically from the material displacementMap. | [**OK**](heightfield.html) |
 | A Heightfield fixed collision shape specified manually. | [**OK**](heightfield-manual.html) |
+| A vehicle simulation with uneven terrain and physics obstacles. | [**OK**](vehicle.html) |
 
