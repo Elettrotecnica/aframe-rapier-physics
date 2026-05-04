@@ -1059,6 +1059,11 @@ window.AFRAME.registerSystem('rapier-physics', {
     this.collisionEventDetail = {};
 
   },
+  update: function () {
+    if (this.physics) {
+      this.physics.world.gravity = this.data.gravity;
+    }
+  },
   initStats() {
     // Data used for performance monitoring.
     this.statsToConsole = this.data.stats.includes("console");
