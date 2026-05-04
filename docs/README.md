@@ -49,9 +49,24 @@ To include the library in your project, place it after the A-Frame one, for inst
 Notice the *type* attribute set to *module*. This is required because
 Rapier must be initialized asyncronously.
 
-The Rapier JavaScript bundle we use is currently hardcoded in the
-system file. This may change in the future, but has the advantage that
-one does not need anything else.
+By default, the Rapier JavaScript bundle we use is served by
+cdn.jsdelivr.net. This is the bundle we test with and has the
+advantage that one does not need anything else to start playing
+around.  If you need or prefer to serve your bundle locally, you can
+specify a custom `window.RAPIER_PATH` before the module is loaded like
+this:
+
+```
+...
+    <script>
+      /* Relative paths refer to the location of aframe-rapier.js. We
+       * recommend using either full URL or absolute paths to avoid
+       * confusion. */
+      window.RAPIER_PATH = '/js/rapier3d-compat-0.19.3.js';
+    </script>
+    <script type="module" src="../aframe-rapier.js"></script>
+...
+```
 
 ## Basics
 
