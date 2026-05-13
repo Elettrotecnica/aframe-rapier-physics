@@ -190,8 +190,8 @@ Rapier class instances such as world, event queue, bodies, colliders
 and constraints. By using the Rapier API directly on these objects it
 is possible to implement custom behavior, like we show in a couple of
 examples:
-* [Force pushing](examples/stress.html)
-* [Vehicle mechanics](examples/vehicle.html)
+* [Force pushing](../examples/stress.html)
+* [Vehicle mechanics](../examples/vehicle.html)
 
 Rapier is pretty well documented. One good starting point is the [JavaScript bindings documentation](https://rapier.rs/docs/user_guides/javascript/getting_started_js).
 
