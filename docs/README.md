@@ -31,7 +31,7 @@ The physics system exposes handles to the World and EventQueue
 objects, so an option is to plug into those in your custom components
 to introduce new features. The components for body and shape also
 provide a handle to their respective body and colliders and can be
-used to extend the vanilla behavior.
+used to extend the vanilla behavior via the [Rapier API](#using-the-rapier-api).
 
 ## Installation
 
@@ -184,6 +184,14 @@ Example:
 | axesMask | `type: generic` | `null` | Mask representing the locked axes of the joint. See [JointAxesMask](https://rapier.rs/javascript3d/enums/JointAxesMask.html) |
 
 ## Using the Rapier API
+
+Components and system in this integration expose handles to various
+Rapier class instances such as world, event queue, bodies, colliders
+and constraints. By using the Rapier API directly on these objects it
+is possible to implement custom behavior, like we show in a couple of
+examples:
+* [Force pushing](examples/stress.html)
+* [Vehicle mechanics](examples/vehicle.html)
 
 Rapier is pretty well documented. One good starting point is the [JavaScript bindings documentation](https://rapier.rs/docs/user_guides/javascript/getting_started_js).
 
