@@ -36,7 +36,7 @@ used to extend the vanilla behavior via the [Rapier API](#using-the-rapier-api).
 ## Installation
 
 To include the library in your project, place it after the A-Frame one, for instance:
-```
+```html
 <head>
 ...
    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
@@ -77,7 +77,7 @@ around.  If you need or prefer to serve your bundle locally, you can
 specify a custom `window.RAPIER_PATH` before the module is loaded like
 this:
 
-```
+```html
 ...
     <script>
       /* Relative paths refer to the location of aframe-rapier.js. We
