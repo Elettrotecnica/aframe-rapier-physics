@@ -49,6 +49,27 @@ To include the library in your project, place it after the A-Frame one, for inst
 Notice the *type* attribute set to *module*. This is required because
 Rapier must be initialized asyncronously.
 
+Another way is to use an [importmap](../examples/importmap.html), for instance, when you want to use
+the module build of A-Frame:
+
+```html
+...
+    <script type="importmap">
+      {
+        "imports": {
+          "aframe": "https://aframe.io/releases/1.8.0/aframe.module.min.js",
+          "three": "https://cdn.jsdelivr.net/npm/super-three@0.184.0/build/three.module.min.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/super-three@0.184.0/examples/jsm/",
+          "aframe-rapier-physics": "../aframe-rapier.js"
+        }
+      }
+    </script>
+    <script type="module">
+      import AFRAME from 'aframe';
+      import 'aframe-rapier-physics';
+...
+```
+
 By default, the Rapier JavaScript bundle we use is served by
 cdn.jsdelivr.net. This is the bundle we test with and has the
 advantage that one does not need anything else to start playing
