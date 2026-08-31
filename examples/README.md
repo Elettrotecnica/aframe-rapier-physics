@@ -19,4 +19,5 @@ the following collection of examples have been prepared.
 | A Heightfield fixed collision shape computed automatically from the material displacementMap. | [**OK**](heightfield.html) |
 | A Heightfield fixed collision shape specified manually. | [**OK**](heightfield-manual.html) |
 | A vehicle simulation with uneven terrain and physics obstacles. | [**OK**](vehicle.html) |
+| Demonstrate how to use the library with the module build of A-Frame via importmap | [**OK**](importmap.html) |
 
