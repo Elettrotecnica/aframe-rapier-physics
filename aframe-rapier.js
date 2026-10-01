@@ -12,7 +12,7 @@
  * @hideconstructor
  */
 
-const RAPIER_PATH = window.RAPIER_PATH || 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.19.3/+esm';
+const RAPIER_PATH = window.RAPIER_PATH || 'https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/+esm';
 
 const getWorldPosition = (function () {
   const position = new THREE.Vector3();
@@ -97,7 +97,13 @@ async function RapierPhysics(options) {
 
   if ( RAPIER === null ) {
 
-    RAPIER = await import( `${RAPIER_PATH}` );
+    try {
+      RAPIER = await import( 'rapier' );
+    } catch (e) {
+      console.log('Rapier build was not specified in the importmap. Loading from ', RAPIER_PATH);
+      RAPIER = await import( RAPIER_PATH );
+    }
+
     await RAPIER.init();
 
   }

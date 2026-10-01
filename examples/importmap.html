@@ -12,6 +12,7 @@
           "three": "https://cdn.jsdelivr.net/npm/three@0.184.0/build/three.module.js",
           "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.184.0/examples/jsm/",
           "aframe-extras/controls": "https://cdn.jsdelivr.net/gh/c-frame/aframe-extras@7.7.x/dist/aframe-extras.controls.min.js",
+          "rapier": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/+esm",
           "aframe-rapier-physics": "../aframe-rapier.js"
         }
       }
@@ -51,10 +52,11 @@
   </head>
   <body>
     <div class="text-overlay">
-      <p>In this example we use the module build of A-Frame that does
-        not include its own threejs. For demonstration purposes, we
-        import the vanilla upstream threejs distribution instead of the
-        SuperMedium fork normally used.</p>
+      <p>In this example we specify the Rapier build via importmap, as
+        well as the module build of A-Frame that does not include its
+        own threejs. For demonstration purposes, we import the vanilla
+        upstream threejs distribution instead of the SuperMedium fork
+        normally used.</p>
     </div>
     <a class="code-link"
        target="_blank"
