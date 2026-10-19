@@ -44,19 +44,10 @@ const getObjectsByProperty = (function () {
   };
 })();
 
-/*
-  This is useful when computing primitive collision shapes for models
-  that do not have the origin at the center of their bounding box.
- */
-const computeOffset = (function () {
-  const b = new THREE.Box3();
-  const v = new THREE.Vector3();
-  return function (object) {
-    object.updateMatrixWorld();
-    const p = getWorldPosition(object);
-    b.setFromObject(object);
-    b.getCenter(v);
-    return p.sub(v).negate();
+const getBoxCenter = (function () {
+  const center = new THREE.Vector3();
+  return function (box) {
+    return box.getCenter(center);
   };
 })();
 
@@ -264,12 +255,16 @@ async function RapierPhysics(options) {
       // If no known shape could be found, compute options via a
       // more expensive approach using the vertices.
       //
-      options.offset = computeOffset(object);
-
       const verticesAndIndexes = _getVerticesAndIndexes(object, options);
       const vertices = verticesAndIndexes.vertices;
 
       const bounds = _computeBounds(vertices);
+
+      const center = getBoxCenter(bounds);
+      options.offset.x = center.x;
+      options.offset.y = center.y;
+      options.offset.z = center.z;
+
       const halfExtents = _computeHalfExtents(
         bounds,
         options.minHalfExtent,
@@ -464,15 +459,99 @@ async function RapierPhysics(options) {
     };
   })();
 
-  const _getVerticesAndIndexes = (function() {
+  function _getVerticesAndIndexes (object, options) {
+    if (object === options.object) {
+      return _getVerticesAndIndexesFromMesh(object, options);
+    } else {
+      return _getVerticesAndIndexesFromBone(object, options);
+    }
+  }
+
+  const _getVerticesAndIndexesFromBone = (function() {
     const vertex = new THREE.Vector3();
-    const quaternion = new THREE.Quaternion();
+    const bonePosition = new THREE.Vector3();
+    const boneQuaternion = new THREE.Quaternion();
+    const boneFrame = new THREE.Matrix4();
+    const worldToBone = new THREE.Matrix4();
     const verticesAndIndexes = {
       vertices: [],
       indexes: []
     };
-    const inverse = new THREE.Matrix4();
-    const transform = new THREE.Matrix4();
+    return function (object, options) {
+      const vertices = verticesAndIndexes.vertices;
+      const indexes = verticesAndIndexes.indexes;
+      const bone = options.object;
+      const threshold = !isNaN(options.boneWeightThreshold) ? options.boneWeightThreshold : 0.5;
+      console.log('threshold', threshold);
+      vertices.length = 0;
+      indexes.length = 0;
+
+      if (!bone?.isBone) {
+        return verticesAndIndexes;
+      }
+
+      object.updateWorldMatrix(true, true);
+
+      bone.matrixWorld.decompose(bonePosition, boneQuaternion, vertex);
+      boneFrame.compose(bonePosition, boneQuaternion, vertex.set(1, 1, 1));
+      worldToBone.copy(boneFrame).invert();
+
+      object.traverse(o => {
+        if (!o.isSkinnedMesh) {
+          return;
+        }
+
+        if (!options.includeInvisible &&
+            (!o.visible || (o.el && !o.el.object3D.visible))) {
+          return;
+        }
+
+        const boneIndex = o.skeleton.bones.indexOf(bone);
+
+        if (boneIndex === -1) {
+          return;
+        }
+
+        const geometry = o.geometry;
+        const skinIndex = geometry.getAttribute('skinIndex');
+        const skinWeight = geometry.getAttribute('skinWeight');
+        const nVertices = geometry.getAttribute('position').count;
+        const nInfluences = skinIndex.itemSize;
+
+        for (let i = 0; i < nVertices; i++) {
+          let weight = 0;
+          for (let j = 0; j < nInfluences; j++) {
+            if (skinIndex.getComponent(i, j) === boneIndex) {
+              weight = skinWeight.getComponent(i, j);
+              break;
+            }
+          }
+
+          if (weight < threshold) {
+            continue;
+          }
+
+          // Skinned vertex in current pose, in local mesh space.
+          o.getVertexPosition(i, vertex);
+          vertex.applyMatrix4(o.matrixWorld).applyMatrix4(worldToBone);
+          vertices.push(vertex.x, vertex.y, vertex.z);
+        }
+      });
+
+      return verticesAndIndexes;
+    };
+  })();
+
+  const _getVerticesAndIndexesFromMesh = (function() {
+    const vertex = new THREE.Vector3();
+    const position = new THREE.Vector3();
+    const quaternion = new THREE.Quaternion();
+    const frame = new THREE.Matrix4();
+    const worldToObject = new THREE.Matrix4();
+    const verticesAndIndexes = {
+      vertices: [],
+      indexes: []
+    };
     return function (object, options) {
       const vertices = verticesAndIndexes.vertices;
       const indexes = verticesAndIndexes.indexes;
@@ -480,58 +559,42 @@ async function RapierPhysics(options) {
       vertices.length = 0;
       indexes.length = 0;
 
-      //
-      // A Rapier shape is assumed to be at rotation 0, so before we
-      // extract the vertices we undo any rotation on the object and
-      // set it back at the end.
-      //
-      quaternion.copy(object.quaternion);
-      object.quaternion.identity();
-
       let indexOffset = 0;
 
-      const scale = getWorldScale(object);
+      object.updateWorldMatrix(true, true);
 
-      inverse.copy(object.matrixWorld).invert();
-      const meshes = getObjectsByProperty(object, 'isMesh', true);
-      for (const mesh of meshes) {
-        if (options.includeInvisible ||
-            mesh.visible ||
-            (mesh.el && mesh.el.object3D.visible)
-           ) {
-          if (mesh === object) {
-            transform.identity();
-          } else {
-            mesh.updateWorldMatrix(true);
-            transform.multiplyMatrices(inverse, mesh.matrixWorld);
-          }
+      object.matrixWorld.decompose(position, quaternion, vertex);
+      frame.compose(position, quaternion, vertex.set(1, 1, 1));
+      worldToObject.copy(frame).invert();
 
-          const geometry = mesh.geometry;
-
-          const positionAttribute = geometry.getAttribute( 'position' );
-          const nVertices = positionAttribute.count;
-
-          for (let i = 0; i < nVertices; i++) {
-            vertex.fromBufferAttribute(positionAttribute, i);
-            //
-            // Apply model's internal transformations.
-            //
-            vertex.applyMatrix4(transform);
-            vertex.multiply(scale);
-            vertices.push( vertex.x, vertex.y, vertex.z );
-          }
-
-          if (geometry.index) {
-            const index = geometry.index;
-            for ( let j = 0; j < index.count; ++ j ) {
-              indexes.push( index.getX( j ) + indexOffset );
-            }
-          }
-          indexOffset += nVertices;
+      object.traverse(o => {
+        if (!o.isMesh) {
+          return;
         }
-      }
 
-      object.quaternion.copy(quaternion);
+        if (!options.includeInvisible &&
+            (!o.visible || (o.el && !o.el.object3D.visible))) {
+          return;
+        }
+
+        const geometry = o.geometry;
+        const positionAttribute = geometry.getAttribute( 'position' );
+        const nVertices = positionAttribute.count;
+
+        for (let i = 0; i < nVertices; i++) {
+          o.getVertexPosition(i, vertex);
+          vertex.applyMatrix4(o.matrixWorld).applyMatrix4(worldToObject);
+          vertices.push(vertex.x, vertex.y, vertex.z);
+        }
+
+        if (geometry.index) {
+          const index = geometry.index;
+          for ( let j = 0; j < index.count; ++ j ) {
+            indexes.push( index.getX( j ) + indexOffset );
+          }
+        }
+        indexOffset += nVertices;
+      });
 
       return verticesAndIndexes;
     };
@@ -608,7 +671,8 @@ async function RapierPhysics(options) {
   }
 
   function createCollider( object, options ) {
-    const body = objectToBodyMap.get(object);
+    const bodyObject = options.object ? options.object : object;
+    const body = objectToBodyMap.get(bodyObject);
     if ( !body ) {
       throw 'No body defined on this object.'
     }
@@ -635,7 +699,6 @@ async function RapierPhysics(options) {
     if (!isNaN(options.solverGroups)) {
       shape.setSolverGroups(options.solverGroups);
     }
-
     const collider = world.createCollider( shape, body );
     collider.setTranslationWrtParent( options.offset );
     collider.setEnabled( options.enabled );
@@ -729,10 +792,12 @@ async function RapierPhysics(options) {
     const q1 = new THREE.Quaternion();
     const q2 = new THREE.Quaternion();
     return function (object1, object2, options) {
-      const body1 = objectToBodyMap.get(object1);
+      const bodyObject1 = options.object1 ? options.object1 : object1;
+      const body1 = objectToBodyMap.get(bodyObject1);
       if (!body1) return;
 
-      const body2 = objectToBodyMap.get(object2);
+      const bodyObject2 = options.object2 ? options.object2 : object2;
+      const body2 = objectToBodyMap.get(bodyObject2);
       if (!body2) return;
 
       //
@@ -744,10 +809,10 @@ async function RapierPhysics(options) {
       // rotation. This is in particular what we want most of the time
       // for a fixed constraint.
       //
-      const dist = distanceVector(object1, object2);
+      const dist = distanceVector(bodyObject1, bodyObject2);
 
-      object1.getWorldQuaternion(q1);
-      object2.getWorldQuaternion(q2);
+      bodyObject1.getWorldQuaternion(q1);
+      bodyObject2.getWorldQuaternion(q2);
 
       if (isNaN(options.anchor1.x)) {
         options.anchor1 = ZERO;
@@ -1062,7 +1127,6 @@ window.AFRAME.registerSystem('rapier-physics', {
 
     })();
 
-    this.bodyLoadedEvent = new window.Event('body-loaded');
     this.collisionEventDetail = {};
 
   },
@@ -1258,6 +1322,7 @@ window.AFRAME.registerSystem('rapier-physics', {
 });
 
 window.AFRAME.registerComponent('rapier-body', {
+  multiple: true,
   schema: {
     type: {
       type: 'string', default: 'Dynamic',
@@ -1266,49 +1331,102 @@ window.AFRAME.registerComponent('rapier-body', {
     canSleep: { type: 'boolean', default: true },
     ccdEnabled: { type: 'boolean', default: false },
     linearDamping: { type: 'number', default: 0 },
-    angularDamping: { type: 'number', default: 0 }
+    angularDamping: { type: 'number', default: 0 },
+    skinnedMesh: { type: 'string', default: '' },
+    bone: { type: 'string', default: '' },
+    boneWeightThreshold: { type: 'number', default: 0.5 }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];
     this.options = Object.assign({}, this.data);
+    this.onObject3DSet = this.onObject3DSet.bind(this);
+    this.onPhysicsLoaded = this.onPhysicsLoaded.bind(this);
+  },
+  onObject3DSet(evt) {
+    if (evt.detail.type !== 'mesh') return;
+    if (this.findObject() !== this.object) {
+      this.removeBody();
+      this.createBody();
+    }
+  },
+  onPhysicsLoaded() {
+    this.createBody();
+  },
+  findObject() {
+    const object3D = this.el.object3D;
+    const meshName = this.data.skinnedMesh;
+    const boneName = this.data.bone;
+    if (meshName.length === 0 || boneName.length === 0) {
+      return object3D;
+    }
+    let object = null;
+    object3D.traverse((o) => {
+      if (!object &&
+          o.isSkinnedMesh &&
+          o.name === meshName) {
+        for (const bone of o.skeleton.bones) {
+          if (bone.name === boneName) {
+            object = bone;
+          }
+        }
+      }
+    });
+    return object;
   },
   update: function () {
     Object.assign(this.options, this.data);
-    if (!this.body) return;
-    this.system.physics.updateBody(
-      this.el.object3D,
-      this.options
-    );
-  },
-  createBody() {
-    if (this.body) return;
-    if (!this.system.physics) {
-      this.el.sceneEl.addEventListener('physics-loaded', (evt) => {
-        this.createBody();
-      }, {once: true});
-    } else {
-      this.body = this.system.physics.createBody(
-        this.el.object3D,
+    const object = this.findObject();
+    if (object !== this.object ||
+        (this.object.isBone &&
+         this.data.boneWeightThreshold !== this.oldData.boneWeightThreshold)
+       ) {
+      this.removeBody();
+      this.createBody();
+    } else if (this.body) {
+      this.system.physics.updateBody(
+        this.object,
         this.options
       );
-      this.el.dispatchEvent(this.system.bodyLoadedEvent);
     }
   },
+  removeBody() {
+    if (this.body) {
+      this.system.physics.removeBody(this.object);
+      this.body = null;
+    }
+  },
+  createBody() {
+    if (this.body || !this.system.physics) {
+      return;
+    }
+    this.object = this.findObject();
+    if (!this.object) {
+      return;
+    }
+    this.body = this.system.physics.createBody(
+      this.object,
+      this.options
+    );
+    this.el.emit('body-loaded', this);
+  },
   syncToPhysics() {
-    this.system.physics?.syncBodyToObject(this.el.object3D);
+    if (this.object) {
+      this.system.physics?.syncBodyToObject(this.object);
+    }
   },
   play: function () {
     this.createBody();
+    this.el.addEventListener('object3dset', this.onObject3DSet);
+    this.el.sceneEl.addEventListener('physics-loaded', this.onPhysicsLoaded);
   },
   pause: function () {
-    if (!this.body) return;
-    this.system.physics.removeBody(this.el.object3D);
-    this.body = null;
+    this.removeBody();
+    this.el.removeEventListener('object3dset', this.onObject3DSet);
+    this.el.sceneEl.removeEventListener('physics-loaded', this.onPhysicsLoaded);
   }
 });
 
 window.AFRAME.registerComponent('rapier-shape', {
-  dependencies: ['rapier-body'],
   multiple: true,
   schema: {
     fit: { type: 'boolean', default: true },
@@ -1347,12 +1465,11 @@ window.AFRAME.registerComponent('rapier-shape', {
     heightSegments: {type: 'number', default: 2},
     widthSegments: {type: 'number', default: 2},
     heightFieldScale: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
-    heights: { type: 'array', default: [] }
+    heights: { type: 'array', default: [] },
+    body: { type: 'string', default: 'rapier-body' }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];
-    this.bodyComponent = this.el.components['rapier-body'];
-
     this.options = Object.assign({}, this.data);
 
     const scale = getWorldScale(this.el.object3D);
@@ -1360,15 +1477,20 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.oldScale.copy(scale);
 
     this.onObject3DSet = this.onObject3DSet.bind(this);
+    this.onBodyLoaded = this.onBodyLoaded.bind(this);
   },
   update: function () {
     Object.assign(this.options, this.data);
-    if (!this.collider) return;
-    this.system.physics.updateCollider(
-      this.el.object3D,
-      this.collider,
-      this.options
-    );
+    if (this.data.body !== this.oldData.body) {
+      this.removeCollider();
+      this.createCollider();
+    } else if (this.collider) {
+      this.system.physics.updateCollider(
+        this.el.object3D,
+        this.collider,
+        this.options
+      );
+    }
   },
   onObject3DSet(evt) {
     if (evt.detail.type !== 'mesh') return;
@@ -1383,13 +1505,28 @@ window.AFRAME.registerComponent('rapier-shape', {
       this.createCollider();
     }
   },
+  onBodyLoaded(evt) {
+    if (evt.detail.attrName === this.data.body) {
+      this.removeCollider();
+      this.createCollider();
+    }
+  },
+  removeCollider() {
+    if (this.collider) {
+      this.system.physics.removeCollider(this.collider);
+      this.collider = null;
+    }
+  },
   createCollider() {
-    if (this.collider) return;
+    if (this.collider) { return; }
 
-    if (!this.bodyComponent.body) {
-      this.el.addEventListener('body-loaded', () => {
-        this.createCollider();
-      }, {once: true});
+    const bodyComponent = this.el.components[this.data.body];
+    if (!bodyComponent) {
+      console.error(`${this.data.body} component not found`);
+      return;
+    }
+
+    if (!bodyComponent.body) {
       return;
     }
 
@@ -1398,9 +1535,12 @@ window.AFRAME.registerComponent('rapier-shape', {
     // case of an a-entity with children entities. The mesh would not
     // be on the entity itself.
     //
+
     const meshes = getObjectsByProperty(this.el.object3D, 'isMesh', true);
     if (meshes.length === 0) return;
 
+    this.options.object = bodyComponent.object;
+    this.options.boneWeightThreshold = bodyComponent.data.boneWeightThreshold;
     this.collider = this.system.physics.createCollider(
       this.el.object3D,
       this.options
@@ -1408,17 +1548,16 @@ window.AFRAME.registerComponent('rapier-shape', {
   },
   play: function () {
     this.el.addEventListener('object3dset', this.onObject3DSet);
+    this.el.addEventListener('body-loaded', this.onBodyLoaded);
     this.createCollider();
   },
   pause: function () {
     this.el.removeEventListener('object3dset', this.onObject3DSet);
-    if (!this.collider) return;
-    this.system.physics.removeCollider(this.collider);
-    this.collider = null;
+    this.el.removeEventListener('body-loaded', this.onBodyLoaded);
+    this.removeCollider();
   },
   updateShape () {
     if (!this.collider) return;
-    Object.assign(this.options, this.data);
     const shape = this.system.physics.createShape(
       this.el.object3D,
       this.options
@@ -1442,7 +1581,6 @@ window.AFRAME.registerComponent('rapier-shape', {
 });
 
 window.AFRAME.registerComponent('rapier-constraint', {
-  dependencies: ['rapier-body'],
   multiple: true,
   schema: {
     type: {
@@ -1462,32 +1600,50 @@ window.AFRAME.registerComponent('rapier-constraint', {
     limitsEnabled: { type: 'boolean', default: false },
     limitMin: { type: 'number', default: Number.NEGATIVE_INFINITY },
     limitMax: { type: 'number', default: Number.POSITIVE_INFINITY },
-    axesMask: { type: 'string' }
+    axesMask: { type: 'string' },
+    body: { type: 'string', default: 'rapier-body' },
+    targetBody: { type: 'string', default: 'rapier-body' }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];
-    this.createConstraint = this.createConstraint.bind(this);
-    this.bodyComponent = this.el.components['rapier-body'];
+    this.options = {};
+
+    this.onBodyLoaded = this.onBodyLoaded.bind(this);
+  },
+  onBodyLoaded(evt) {
+    if (evt.detail.attrName === this.data.body) {
+      this.update();
+    }
   },
   createConstraint () {
-    if (this.constraint) return;
-
-    if (!this.data.target) return;
-
-    if (!this.bodyComponent.body) {
-      this.el.addEventListener('body-loaded', this.createConstraint, {once: true});
-      return;
-    }
-
-    this.targetBodyComponent = this.data.target.components['rapier-body'];
-    if (!this.targetBodyComponent || !this.targetBodyComponent.body) {
-      this.data.target.addEventListener('body-loaded', this.createConstraint, {once: true});
-      return;
-    }
+    if (this.constraint) { return; }
 
     const source = this.el.object3D;
-    const target = this.data.target.object3D;
-    const options = this.data;
+    const target = this.data.target;
+    if (!target) {
+      console.error('Constraint target not found.');
+      return;
+    }
+
+    const bodyComponent = this.el.components[this.data.body];
+    if (!bodyComponent) {
+      console.error(`${this.data.body} component not found.`);
+      return;
+    }
+
+    const targetBodyComponent = target.components[this.data.targetBody];
+    if (!targetBodyComponent) {
+      console.error(`${this.data.targetBody} component not found on target.`);
+      return;
+    }
+
+    if (!bodyComponent.body || !targetBodyComponent.body) {
+      return;
+    }
+
+    const options = this.options;
+    options.object1 = bodyComponent.object;
+    options.object2 = targetBodyComponent.object;
 
     this.constraint = this.system.physics.createConstraint(source, target, options);
   },
@@ -1497,16 +1653,22 @@ window.AFRAME.registerComponent('rapier-constraint', {
     this.constraint = null;
   },
   update: function () {
+    Object.assign(this.options, this.data);
+    this.oldData.target?.removeEventListener('body-loaded', this.onBodyLoaded);
     if (this.isPlaying) {
-      this.removeConstraint();
-      this.createConstraint();
+      this.pause();
+      this.play();
     }
   },
   play: function () {
     this.createConstraint();
+    this.el.addEventListener('body-loaded', this.onBodyLoaded);
+    this.data.target?.addEventListener('body-loaded', this.onBodyLoaded);
   },
   pause: function () {
     this.removeConstraint();
+    this.el.removeEventListener('body-loaded', this.onBodyLoaded);
+    this.data.target?.removeEventListener('body-loaded', this.onBodyLoaded);
   }
 });
 
