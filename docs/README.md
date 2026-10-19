@@ -132,10 +132,14 @@ scene. A couple of options can be set to customize your simulation:
 
 ### `rapier-body`
 
-A `rapier-body` component may be added to any entity in a
+One or more `rapier-body` component may be added to any entity in a
 scene. While having only a `rapier-body` will technically give you a
 valid physics body in the scene, only after adding a `rapier-shape`
 will your entity begin to collide with other objects.
+
+Be aware that an object on the scene may only be affected by one
+rapier body. Setting multiple instances on the same entity makes sense
+only when addressing different bones of a skinned mesh.
 
 | Property   | Default   | Description                                                  |
 | -----------| ----------| ------------------------------------------------------------ |
@@ -144,6 +148,9 @@ will your entity begin to collide with other objects.
 | ccdEnabled | `false`   | Enable [Continuous Collision Detection](https://rapier.rs/docs/user_guides/javascript/advanced_collision_detection/#continuous-collision-detection). |
 | linearDamping  | `0`   | linear damping coefficient, affecting body's linear velocity. See [rigid_body_damping](https://rapier.rs/docs/user_guides/javascript/rigid_body_damping/) |
 | angularDamping | `0`   | angular damping coefficient, affecting body's angular velocity. See [rigid_body_damping](https://rapier.rs/docs/user_guides/javascript/rigid_body_damping/) |
+| skinnedMesh |   | The name of a [THREE.SkinnedMesh](https://threejs.org/docs/#SkinnedMesh) we expect to find in the entity's hierarchy. Typically comes from a model. Must be set together with `bone` to have an effect. |
+| bone |   | The name of a [THREE.Bone](https://threejs.org/docs/#Bone) we expect to find in the skeleton of specified `skinnedMesh`. The physics of this body will affect the bone instead of the whole object. Shapes assigned to this body will be calculated only on the vertices this bone affects. |
+| boneWeightThreshold | `0.5` | When creating the body for a bone, the influence the bone should have on a vertex in the skinned mesh for this to be considered a vertex of the bone. This will affect the automated shape generation. |
 
 ### `rapier-shape`
 
@@ -180,6 +187,7 @@ specify one manually.
 | widthSegments | `Heightfield` shape and `fit` set to `false` | `2` | The number of horizontal segments for the Heightfield. `2` is the minimum required by Rapier and corresponds to `1` in three.js logics. |
 | heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. This is not the same as the displacementScale, as it is used to control the size of the shape for all three dimensions. |
 | heights | `Heightfield` shape and `fit` set to `false`| `[]` | The heights of the heightfield along its local y axis, provided as a matrix stored in column-major order. |
+| body | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target. |
 
 
 ### `rapier-constraint`
@@ -205,6 +213,7 @@ Example:
 | frame2      | `type: fixed` (optional) | `null` | The reference orientation of the joint wrt. the first rigid-body. |
 | axis | `type: generic, prismatic, revolute` | `0 0 1` | Axis used to constrain the movement. |
 | axesMask | `type: generic` | `null` | Mask representing the locked axes of the joint. See [JointAxesMask](https://rapier.rs/javascript3d/enums/JointAxesMask.html) |
+| body | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target. |
 
 ## Using the Rapier API
 
@@ -224,7 +233,7 @@ The full API documentation for JavaScript 3D is available [here](https://rapier.
 
 | event         | description                                                                                         |
 | ------------- | --------------------------------------------------------------------------------------------------- |
-| `body-loaded` | Fired by the entity when its physics body has been created.                                         |
+| `body-loaded` | Fired by the entity when its physics body has been created or re-created.                                         |
 | `collidestart`     | Fired when two shapes collide. `emitCollisionEvents: true` must be set on the `rapier-shape`.          |
 | `collideend` | Fired when two shapes stop colliding. `emitCollisionEvents: true` must be set on the `rapier-shape`.   |
 
