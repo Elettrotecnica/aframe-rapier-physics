@@ -490,7 +490,7 @@ async function RapierPhysics(options) {
         return verticesAndIndexes;
       }
 
-      object.updateWorldMatrix(true, true);
+      object.updateMatrixWorld(true);
 
       bone.matrixWorld.decompose(bonePosition, boneQuaternion, vertex);
       boneFrame.compose(bonePosition, boneQuaternion, vertex.set(1, 1, 1));
@@ -561,7 +561,7 @@ async function RapierPhysics(options) {
 
       let indexOffset = 0;
 
-      object.updateWorldMatrix(true, true);
+      object.updateMatrixWorld(true);
 
       object.matrixWorld.decompose(position, quaternion, vertex);
       frame.compose(position, quaternion, vertex.set(1, 1, 1));
