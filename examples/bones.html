@@ -1,0 +1,104 @@
+<html>
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no,user-scalable=no,maximum-scale=1">
+    <title>Examples • Bone colliders RAPIER</title>
+    <script src="https://aframe.io/releases/1.8.0/aframe.min.js"></script>
+    <script type="module" src="../aframe-rapier.js"></script>
+    <script src="https://unpkg.com/aframe-environment-component@1.5.0/dist/aframe-environment-component.min.js"></script>
+    <script src="../components/force-pushable.js"></script>
+    <script src="../components/grab.js"></script>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <div class="text-overlay">
+      <p>Example of colliders built from the bones of a skinned mesh.</p>
+    </div>
+    <a class="code-link"
+       target="_blank"
+       href="https://github.com/Elettrotecnica/aframe-rapier-physics/blob/main/examples/compound.html">
+      view code
+    </a>
+    <a-scene environment rapier-physics="debug: true;">
+      <a-assets>
+        <a-asset id="lhand" src="https://cdn.aframe.io/controllers/hands/leftHandLow.glb"></a-asset>
+        <a-asset id="rhand" src="https://cdn.aframe.io/controllers/hands/rightHandLow.glb"></a-asset>
+      </a-assets>
+
+      <!-- Terrain -->
+      <a-box width="75" height="0.1" depth="75" rapier-body="type: Fixed" rapier-shape visible="false"></a-box>
+
+      <a-entity position="-6 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Hull and box collider on the palm of the hand. The palm bone is the parent of every other bone, so the whole hand moves."
+	  align="center"
+	  >
+	</a-text>
+	<a-gltf-model
+	  src="#lhand"
+	  position="-1 4 0"
+	  scale="6 6 6"
+	  rapier-body="skinnedMesh: handRLow; bone: Palm;"
+	  rapier-shape="mass: 5"
+	  >
+	</a-gltf-model>
+	<a-gltf-model
+	  src="#lhand"
+	  position="1 4 0"
+	  scale="6 6 6"
+	  rapier-body="skinnedMesh: handRLow; bone: Palm;"
+	  rapier-shape="shape: Cuboid; mass: 5"
+	  >
+	</a-gltf-model>
+      </a-entity>
+
+      <a-entity position="-1 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="A collider on the index finger. As a bone affects only its children, the rest of the hand will not move."
+	  align="center"
+	  >
+	</a-text>
+	<a-gltf-model
+	  src="#lhand"
+	  position="0 2 -1"
+	  scale="6 6 6"
+	  rapier-body="skinnedMesh: handRLow; bone: F1a;"
+	  rapier-shape="shape: Cuboid; mass: 5"
+	  >
+	</a-gltf-model>
+      </a-entity>
+
+      <a-entity position="4 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Each finger as an own collider with a hinge constraint to the palm."
+	  align="center"
+	  >
+	</a-text>
+	<a-gltf-model
+	  id="thehand"
+	  src="#lhand"
+	  position="0 2 -1"
+	  scale="6 6 6"
+	  rapier-body__palm="skinnedMesh: handRLow; bone: Palm;"
+	  rapier-body__index="skinnedMesh: handRLow; bone: F1c;"
+	  rapier-shape__index
+	  rapier-constraint__index="type: revolute; axis: 0 0 1; target: #thehand; targetBody: rapier-body__palm"
+	  rapier-body__middle="skinnedMesh: handRLow; bone: F2c;"
+	  rapier-shape__middle
+	  rapier-constraint__middle="type: revolute; axis: 0 0 1; target: #thehand; targetBody: rapier-body__palm"
+	  rapier-body__anular="skinnedMesh: handRLow; bone: F3c;"
+	  rapier-shape__anular
+	  rapier-constraint__anular="type: revolute; axis: 0 0 1; target: #thehand; targetBody: rapier-body__palm"
+	  rapier-body__little="skinnedMesh: handRLow; bone: F4c;"
+	  rapier-shape__little
+	  rapier-constraint__little="type: revolute; axis: 0 0 1; target: #thehand; targetBody: rapier-body__palm"
+	  >
+	</a-gltf-model>
+      </a-entity>
+    </a-scene>
+  </body>
+</html>

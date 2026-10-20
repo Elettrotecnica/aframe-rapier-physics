@@ -8,6 +8,7 @@ the following collection of examples have been prepared.
 | ------------------------------------------------------------ | -------------------------------------- |
 | Demonstration of many features in a single example.          | [**OK**](sandbox.html)     |
 | Construct a compound shape and simulate collision with a ground plane. | [**OK**](compound.html)     |
+| Construct shapes from the bones of a skinned mesh. | [**OK**](bones.html)     |
 | Demonstration of many constraints including cone twist, hinge, lock, point to point and slider constraints. | [**OK**](constraints.html) |
 | Bounce simulation with restitution (bounciness) of 1. | [**OK**](materials.html)   |
 | Four vertical springs each between two boxes with an assortment of damping and stiffness values | [**OK**](spring.html)     |
