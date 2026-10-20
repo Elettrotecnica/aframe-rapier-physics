@@ -187,7 +187,7 @@ specify one manually.
 | widthSegments | `Heightfield` shape and `fit` set to `false` | `2` | The number of horizontal segments for the Heightfield. `2` is the minimum required by Rapier and corresponds to `1` in three.js logics. |
 | heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. This is not the same as the displacementScale, as it is used to control the size of the shape for all three dimensions. |
 | heights | `Heightfield` shape and `fit` set to `false`| `[]` | The heights of the heightfield along its local y axis, provided as a matrix stored in column-major order. |
-| body | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target. |
+| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the shape component, if any. |
 
 
 ### `rapier-constraint`
@@ -213,7 +213,15 @@ Example:
 | frame2      | `type: fixed` (optional) | `null` | The reference orientation of the joint wrt. the first rigid-body. |
 | axis | `type: generic, prismatic, revolute` | `0 0 1` | Axis used to constrain the movement. |
 | axesMask | `type: generic` | `null` | Mask representing the locked axes of the joint. See [JointAxesMask](https://rapier.rs/javascript3d/enums/JointAxesMask.html) |
-| body | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target. |
+| length | `type: rope` | `0` | Length of the rope constraint. |
+| restLength | `type: spring` | `0` | Rest length of the spring constraint. |
+| stiffness | `type: spring` | `0` | Stiffness of the spring constraint. |
+| damping | `type: spring` | `0` | Damping of the spring constraint. |
+| limitsEnabled | `type: prismatic` | `false` | Whether to enable limits on the prismatic constraint. |
+| limitsMin | `type: prismatic` and `limitsEnabled` set to `true` | `NEGATIVE_INFINITY` | The lower bound to the prismatic constraint limit. |
+| limitsMax | `type: prismatic` and `limitsEnabled` set to `true` | `POSITIVE_INFINITY` | The UPPER bound to the prismatic constraint limit. |
+| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the constraint component, if any. |
+| targetBody | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target on the target entity. |
 
 ## Using the Rapier API
 
