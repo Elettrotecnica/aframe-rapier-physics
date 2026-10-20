@@ -13,7 +13,7 @@
   </head>
   <body>
     <div class="text-overlay">
-      <p>Compound shape.</p>
+      <p>Various examples of compound shape.</p>
       <p>Click when the red reticle is over the sphere to apply a force to it.</p>
     </div>
     <a class="code-link"
@@ -52,74 +52,151 @@
       <!-- Terrain -->
       <a-box width="75" height="0.1" depth="75" rapier-body="type: Fixed" rapier-shape visible="false"></a-box>
 
-      <!-- A single sphere entity with two colliders -->
-      <a-sphere radius="0.25" position="-1 4 -2" color="red"
-                rapier-body
-                rapier-shape__main="shape: Cylinder;
-                                    mass: 4;
-                                    fit: false;
-                                    halfExtents: 0.24 0.18 0.24;
-                                    radius: 0.25;
-                                    axis: y"
-                rapier-shape__handle="shape: Cuboid;
-                                      mass: 1;
-                                      fit: false;
-                                      halfExtents: 0.15 0.18 0.04;
-                                      offset: 0.4 0 0;"
-                force-pushable="force: 40"
-      ></a-sphere>
-
-      <!-- An entity with a single collider wrapping two entity children -->
-      <a-entity position="0 4 -2"
-        rapier-body
-        rapier-shape="mass: 5"
-        force-pushable="force: 40">
-        <a-cylinder width="0.48" height="0.36" depth="0.48" radius="0.25" color="blue" position="0 0 0"></a-cylinder>
-        <a-box width="0.30" height="0.36" depth="0.08" radius="0.25" color="blue" position="0.4 0 0"></a-box>
+      <a-entity position="-6 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Single primitive, multiple colliders"
+	  align="center"
+	  >
+	</a-text>
+	<a-sphere
+	  position="0 4 0"
+	  radius="0.25"
+	  color="red"
+          rapier-body
+          rapier-shape__main="shape: Cylinder;
+                              mass: 4;
+                              fit: false;
+                              halfExtents: 0.24 0.18 0.24;
+                              radius: 0.25;
+                              axis: y"
+          rapier-shape__handle="shape: Cuboid;
+                                mass: 1;
+                                fit: false;
+                                halfExtents: 0.15 0.18 0.04;
+                                offset: 0.4 0 0;"
+          force-pushable="force: 40"
+	  >
+	</a-sphere>
       </a-entity>
 
-      <!-- An entity with a single collider wrapping two gltf models -->
-      <a-entity position="1 4 -2" scale="3 3 3"
-        rapier-body
-        rapier-shape="mass: 5"
-        force-pushable="force: 40">
-        <a-gltf-model src="#lhand" scale="1 1 1" position="0 0 0"></a-gltf-model>
-        <a-gltf-model src="#rhand" scale="2 2 2" position="0.5 0 0"></a-gltf-model>
+      <a-entity position="-1 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Multiple primitives, one collider"
+	  align="center"
+	  >
+	</a-text>
+	<a-entity
+	  position="0 4 0"
+	  rapier-body
+	  rapier-shape="mass: 5"
+	  force-pushable="force: 40"
+	  >
+          <a-cylinder
+	    width="0.48"
+	    height="0.36"
+	    depth="0.48"
+	    radius="0.25"
+	    color="blue"
+	    position="0 0 0">
+	  </a-cylinder>
+          <a-box
+	    width="0.30"
+	    height="0.36"
+	    depth="0.08"
+	    radius="0.25"
+	    color="blue"
+	    position="0.4 0 0">
+	  </a-box>
+	</a-entity>
       </a-entity>
 
-      <!-- An entity with a single collider wrapping two gltf models with a Cuboid shape-->
-      <a-entity
-	position="3.5 4 -2" scale="3 3 3"
-	rapier-body
-	rapier-shape="shape: Cuboid; mass: 5"
-	rotation="90 45 60"
-        force-pushable="force: 40"
-	>
-        <a-gltf-model src="#lhand" scale="2 2 2" position="0 0 0"></a-gltf-model>
-        <a-gltf-model src="#rhand" scale="1 1 1" position="0.5 0 0"></a-gltf-model>
+      <a-entity position="4 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Multiple models, one hull collider"
+	  align="center"
+	  >
+	</a-text>
+	<a-entity
+	  position="0 4 0"
+	  scale="3 3 3"
+          rapier-body
+          rapier-shape="mass: 5"
+          force-pushable="force: 40"
+	  >
+          <a-gltf-model
+	    src="#lhand"
+	    scale="1 1 1"
+	    position="0 0 0"
+	    >
+	  </a-gltf-model>
+          <a-gltf-model
+	    src="#rhand"
+	    scale="2 2 2"
+	    position="0.5 0 0"
+	    >
+	  </a-gltf-model>
+	</a-entity>
       </a-entity>
 
-      <!-- An model with a collider created from a bone -->
-      <a-gltf-model
-	id="test"
-	position="8 1 -2"
-	src="#lhand"
-	scale="6 6 6"
-	visible="true"
-        rapier-body="skinnedMesh: handRLow; bone: Palm; boneWeightThreshold: 0.9"
-        rapier-shape=""
-	>
-      </a-gltf-model>
+      <a-entity position="9 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="Multiple models, one cuboid collider"
+	  align="center"
+	  >
+	</a-text>
+	<a-entity
+	  position="0 4 0"
+	  scale="3 3 3"
+	  rapier-body
+	  rapier-shape="shape: Cuboid; mass: 5"
+	  rotation="90 45 60"
+          force-pushable="force: 40"
+	  >
+          <a-gltf-model
+	    src="#lhand"
+	    scale="2 2 2"
+	    position="0 0 0"
+	    >
+	  </a-gltf-model>
+          <a-gltf-model
+	    src="#rhand"
+	    scale="1 1 1"
+	    position="0.5 0 0"
+	    >
+	  </a-gltf-model>
+	</a-entity>
+      </a-entity>
 
-      <!-- An entity with a collider created from a bone of a sub-entity gltf -->
-      <a-entity
-	position="3.5 4 -2" scale="3 3 3"
-	rapier-body="skinnedMesh: handRLow; bone: Palm; boneWeightThreshold: 0.9"
-	rapier-shape="shape: Cuboid; mass: 5"
-	rotation="90 45 60"
-        force-pushable="force: 40"
-	>
-        <a-gltf-model src="#lhand" scale="2 2 2" position="0 0 0"></a-gltf-model>
+      <a-entity position="14 0 -2">
+	<a-text
+	  position="0 1.5 0"
+	  value="A primitive and a model in one cuboid collider."
+	  align="center"
+	  >
+	</a-text>
+	<a-entity
+	  position="0 4 0"
+	  rapier-body
+	  rapier-shape="shape: Cuboid; mass: 5"
+	  rotation="90 45 60"
+          force-pushable="force: 40"
+	  >
+	  <a-sphere
+	    radius="0.25"
+	    color="green"
+	    position="0.5 0 0"
+	    >
+	  </a-sphere>
+          <a-gltf-model
+	    src="#lhand"
+	    position="0 0 0"
+	    >
+	  </a-gltf-model>
+	</a-entity>
       </a-entity>
 
     </a-scene>
