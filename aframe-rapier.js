@@ -482,7 +482,7 @@ async function RapierPhysics(options) {
       const indexes = verticesAndIndexes.indexes;
       const bone = options.object;
       const threshold = !isNaN(options.boneWeightThreshold) ? options.boneWeightThreshold : 0.5;
-      console.log('threshold', threshold);
+
       vertices.length = 0;
       indexes.length = 0;
 
@@ -1466,7 +1466,7 @@ window.AFRAME.registerComponent('rapier-shape', {
     widthSegments: {type: 'number', default: 2},
     heightFieldScale: { type: 'vec3', default: { x: 1, y: 1, z: 1 } },
     heights: { type: 'array', default: [] },
-    body: { type: 'string', default: 'rapier-body' }
+    body: { type: 'string', default: '' }
   },
   init: function () {
     this.system = this.el.sceneEl.systems['rapier-physics'];
@@ -1480,6 +1480,12 @@ window.AFRAME.registerComponent('rapier-shape', {
     this.onBodyLoaded = this.onBodyLoaded.bind(this);
   },
   update: function () {
+    if (this.data.body.length === 0) {
+      this.data.body = 'rapier-body';
+      if (this.name !== this.attrName) {
+        this.data.body = `${this.data.body}__${this.id}`;
+      }
+    }
     Object.assign(this.options, this.data);
     if (this.data.body !== this.oldData.body) {
       this.removeCollider();
@@ -1601,7 +1607,7 @@ window.AFRAME.registerComponent('rapier-constraint', {
     limitMin: { type: 'number', default: Number.NEGATIVE_INFINITY },
     limitMax: { type: 'number', default: Number.POSITIVE_INFINITY },
     axesMask: { type: 'string' },
-    body: { type: 'string', default: 'rapier-body' },
+    body: { type: 'string', default: '' },
     targetBody: { type: 'string', default: 'rapier-body' }
   },
   init: function () {
@@ -1653,6 +1659,12 @@ window.AFRAME.registerComponent('rapier-constraint', {
     this.constraint = null;
   },
   update: function () {
+    if (this.data.body.length === 0) {
+      this.data.body = 'rapier-body';
+      if (this.name !== this.attrName) {
+        this.data.body = `${this.data.body}__${this.id}`;
+      }
+    }
     Object.assign(this.options, this.data);
     this.oldData.target?.removeEventListener('body-loaded', this.onBodyLoaded);
     if (this.isPlaying) {
