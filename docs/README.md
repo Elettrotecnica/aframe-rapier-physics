@@ -220,7 +220,7 @@ Example:
 | limitsEnabled | `type: prismatic` | `false` | Whether to enable limits on the prismatic constraint. |
 | limitsMin | `type: prismatic` and `limitsEnabled` set to `true` | `NEGATIVE_INFINITY` | The lower bound to the prismatic constraint limit. |
 | limitsMax | `type: prismatic` and `limitsEnabled` set to `true` | `POSITIVE_INFINITY` | The UPPER bound to the prismatic constraint limit. |
-| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the constraint component, if any. |
+| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the constraint component, if any. When a body with such id is not found, we fall back to `rapier-body` (e.g. when a simple body has multiple constraints attached to it). |
 | targetBody | Entities with multiple rapier-body component instances. | `rapier-body` | The attribute name of the exact rapier-body component we want to target on the target entity. |
 
 ## Using the Rapier API
