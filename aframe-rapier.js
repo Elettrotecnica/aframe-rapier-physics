@@ -1481,9 +1481,12 @@ window.AFRAME.registerComponent('rapier-shape', {
   },
   update: function () {
     if (this.data.body.length === 0) {
-      this.data.body = 'rapier-body';
-      if (this.name !== this.attrName) {
-        this.data.body = `${this.data.body}__${this.id}`;
+      let body = `rapier-body__${this.id}`;
+      if (this.name !== this.attrName &&
+          this.el.components[body]) {
+        this.data.body = body;
+      } else {
+        this.data.body = 'rapier-body';
       }
     }
     Object.assign(this.options, this.data);

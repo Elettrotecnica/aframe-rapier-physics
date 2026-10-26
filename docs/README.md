@@ -187,7 +187,7 @@ specify one manually.
 | widthSegments | `Heightfield` shape and `fit` set to `false` | `2` | The number of horizontal segments for the Heightfield. `2` is the minimum required by Rapier and corresponds to `1` in three.js logics. |
 | heightFieldScale | `Heightfield` shape and `fit: false` | `1 1 1` | The scale applied to the heightfield shape. This is not the same as the displacementScale, as it is used to control the size of the shape for all three dimensions. |
 | heights | `Heightfield` shape and `fit` set to `false`| `[]` | The heights of the heightfield along its local y axis, provided as a matrix stored in column-major order. |
-| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the shape component, if any. |
+| body | Entities with multiple rapier-body component instances. | `` | The attribute name of the exact rapier-body component we want to target. When empty, will be set to `rapier-body`, plus the component id of the shape component, if any. When a body with such id is not found, we fall back to `rapier-body` (e.g. when a simple body has multiple shapes attached to it). |
 
 
 ### `rapier-constraint`
