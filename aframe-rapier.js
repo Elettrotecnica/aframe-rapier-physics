@@ -1269,7 +1269,7 @@ window.AFRAME.registerSystem('rapier-physics', {
       const object1 = this.physics.getObjectFromCollider(collider1);
       const object2 = this.physics.getObjectFromCollider(collider2);
       const eventName = started ? 'collidestart' : 'collideend';
-      world.narrowPhase.contactPair(handle1, handle2, (manifold, flipped) => {
+      world.contactPair(collider1, collider2, (manifold, flipped) => {
         const contactPoint1 = manifold.localContactPoint1();
         const contactPoint2 = manifold.localContactPoint2();
         const impulse = manifold.contactImpulse();
