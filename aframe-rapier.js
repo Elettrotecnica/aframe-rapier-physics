@@ -1127,8 +1127,14 @@ window.AFRAME.registerSystem('rapier-physics', {
 
     })();
 
-    this.collisionEventDetail = {};
-
+    this.collideStartEvent = new CustomEvent(
+      'collidestart',
+      { detail: {}, bubbles: true }
+    );
+    this.collideEndEvent = new CustomEvent(
+      'collideend',
+      { detail: {}, bubbles: true }
+    );
   },
   update: function () {
     if (this.physics) {
@@ -1147,8 +1153,14 @@ window.AFRAME.registerSystem('rapier-physics', {
       this.trackPerf = true;
       this.tickCounter = 0;
 
-      this.statsTickData = {};
-      this.statsBodyData = {};
+      this.statsTickEvent = new CustomEvent(
+        'physics-tick-data',
+        { detail: {}, bubbles: true }
+      );
+      this.statsBodyEvent = new CustomEvent(
+        'physics-body-data',
+        { detail: {}, bubbles: true }
+      );
 
       this.bodyTypeToStatsPropertyMap = {
         [RAPIER.RigidBodyType.Fixed] : "staticBodies",
@@ -1160,7 +1172,7 @@ window.AFRAME.registerSystem('rapier-physics', {
       const world = this.physics.world;
 
       this.countBodies = () => {
-        const statsData = this.statsBodyData
+        const statsData = this.statsBodyEvent.detail;
         statsData.manifolds = 0;
         statsData.collisions = this.numCollisions;
         statsData.colliders = this.physics.world.colliders.len();
@@ -1171,11 +1183,12 @@ window.AFRAME.registerSystem('rapier-physics', {
 
         world.bodies.forEach((rigidBody) => {
           const bodyType = this.bodyTypeToStatsPropertyMap[rigidBody.bodyType()];
-          this.statsBodyData[bodyType]++;
+          this.statsBodyEvent.detail[bodyType]++;
         });
+
         world.colliders.forEach((collider) => {
           world.narrowPhase.contactPairsWith(collider.handle, () => {
-            this.statsBodyData.manifolds++;
+            this.statsBodyEvent.detail.manifolds++;
           });
         });
       }
@@ -1262,31 +1275,29 @@ window.AFRAME.registerSystem('rapier-physics', {
 
     // Review events
     events.drainCollisionEvents((handle1, handle2, started) => {
-
       this.numCollisions+= started ? 1 : -1;
       const collider1 = world.getCollider(handle1);
       const collider2 = world.getCollider(handle2);
       const object1 = this.physics.getObjectFromCollider(collider1);
       const object2 = this.physics.getObjectFromCollider(collider2);
-      const eventName = started ? 'collidestart' : 'collideend';
+      const event = started ? this.collideStartEvent : this.collideEndEvent;
       world.contactPair(collider1, collider2, (manifold, flipped) => {
         const contactPoint1 = manifold.localContactPoint1();
         const contactPoint2 = manifold.localContactPoint2();
         const impulse = manifold.contactImpulse();
-
         if (collider1.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          this.collisionEventDetail.targetEl = object2.el;
-          this.collisionEventDetail.contactPoint = contactPoint1;
-          this.collisionEventDetail.targetContactPoint = contactPoint2;
-          this.collisionEventDetail.impulse = impulse;
-          object1.el.emit(eventName, this.collisionEventDetail);
+          event.detail.targetEl = object2.el;
+          event.detail.contactPoint = contactPoint1;
+          event.detail.targetContactPoint = contactPoint2;
+          event.detail.impulse = impulse;
+          object1.el.dispatchEvent(event);
         }
         if (collider2.activeEvents() !== RAPIER.ActiveEvents.NONE) {
-          this.collisionEventDetail.targetEl = object1.el;
-          this.collisionEventDetail.contactPoint = contactPoint2;
-          this.collisionEventDetail.targetContactPoint = contactPoint1;
-          this.collisionEventDetail.impulse = impulse;
-          object2.el.emit(eventName, this.collisionEventDetail);
+          event.detail.targetEl = object1.el;
+          event.detail.contactPoint = contactPoint2;
+          event.detail.targetContactPoint = contactPoint1;
+          event.detail.impulse = impulse;
+          object1.el.dispatchEvent(event);
         }
       });
     });
@@ -1295,12 +1306,12 @@ window.AFRAME.registerSystem('rapier-physics', {
       const afterEndTime = performance.now();
       const engineStartTime = this.physics.stepStartTime;
       const engineEndTime = this.physics.stepEndTime;
-      this.statsTickData.before = engineStartTime - beforeStartTime
-      this.statsTickData.engine = engineEndTime - engineStartTime
-      this.statsTickData.after = afterEndTime - engineEndTime
-      this.statsTickData.total = afterEndTime - beforeStartTime
+      this.statsTickEvent.detail.before = engineStartTime - beforeStartTime;
+      this.statsTickEvent.detail.engine = engineEndTime - engineStartTime;
+      this.statsTickEvent.detail.after = afterEndTime - engineEndTime;
+      this.statsTickEvent.detail.total = afterEndTime - beforeStartTime;
 
-      this.el.emit("physics-tick-data", this.statsTickData)
+      this.el.dispatchEvent(this.statsTickEvent);
 
       this.tickCounter++;
 
@@ -1309,11 +1320,11 @@ window.AFRAME.registerSystem('rapier-physics', {
         this.countBodies();
 
         if (this.statsToConsole) {
-          console.log("Physics body stats:", this.statsBodyData)
+          console.log('Physics body stats:', this.statsBodyEvent.detail);
         }
 
         if (this.statsToEvents  || this.statsToPanel) {
-          this.el.emit("physics-body-data", this.statsBodyData)
+          this.el.dispatchEvent(this.statsBodyEvent);
         }
         this.tickCounter = 0;
       }
