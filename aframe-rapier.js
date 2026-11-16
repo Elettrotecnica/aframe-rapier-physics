@@ -1297,7 +1297,7 @@ window.AFRAME.registerSystem('rapier-physics', {
           event.detail.contactPoint = contactPoint2;
           event.detail.targetContactPoint = contactPoint1;
           event.detail.impulse = impulse;
-          object1.el.dispatchEvent(event);
+          object2.el.dispatchEvent(event);
         }
       });
     });
